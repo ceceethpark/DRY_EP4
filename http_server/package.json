@@ -1,0 +1,13 @@
+{
+  "name": "dy-ep4-image-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HTTP JPEG upload server for DY-EP4 dryers",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node smoke-test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

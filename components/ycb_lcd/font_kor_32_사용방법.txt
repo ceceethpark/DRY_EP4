@@ -1,0 +1,260 @@
+﻿font_kor_32.c 사용방법
+대상: JC1060P470C / ESP32-P4 / Arduino / LVGL 8
+==================================================
+
+1. 폰트 정보
+- 공개 심볼명: font_kor_32
+- 크기: 32 px
+- line_height: 38 px
+- base_line: 9 px
+- 형식: 2 bpp 압축 폰트
+- ASCII: U+0020~U+007E
+- 한글 완성형: U+AC00~U+D7A3, 총 11,172자
+- 단독 자모 U+3131~U+3163은 포함되지 않음
+
+이 파일은 제작할 때 자모를 조합했지만, JC1060 실행 시에는 이미 저장된
+완성형 비트맵을 인덱스로 찾아 표시합니다.
+
+2. 파일 이름과 위치
+첨부 파일 이름을 다음처럼 바꿉니다.
+
+    font_kor_32.c
+
+그리고 Arduino 스케치의 주 폴더에 넣습니다.
+
+예:
+    JC1060_24H_Timer/
+    ├─ JC1060_24H_Timer.ino
+    ├─ timer_ui.cpp
+    ├─ timer_ui.h
+    ├─ font_kor_32.c
+    ├─ font_jamo_32.c
+    └─ lv_conf.h
+
+동일한 font_kor_32.c가 두 개 있으면 중복 정의 오류가 발생합니다.
+
+3. lv_conf.h 필수 설정
+
+//////////////////////////////gpt S
+#define LV_USE_FONT_COMPRESSED 1
+#define LV_FONT_FMT_TXT_LARGE  1
+//////////////////////////////gpt E
+
+기존 항목이 있으면 새로 추가하지 말고 값을 1로 수정합니다.
+
+4. timer_ui.cpp 상단 선언
+
+font_kor_32.c는 C 파일이므로 C++ 파일에서는 extern "C"로 선언하는 것이
+안전합니다.
+
+//////////////////////////////gpt S
+extern "C" {
+LV_FONT_DECLARE(font_kor_32);
+}
+//////////////////////////////gpt E
+
+5. 라벨에 직접 적용
+
+//////////////////////////////gpt S
+lv_obj_t *label = lv_label_create(lv_scr_act());
+
+lv_label_set_text(label, "한글 표시 시험");
+
+lv_obj_set_style_text_font(
+    label,
+    &font_kor_32,
+    LV_PART_MAIN
+);
+
+lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+//////////////////////////////gpt E
+
+라벨 높이는 line_height가 38픽셀이므로 최소 40~48픽셀을 권장합니다.
+
+6. 기존 create_label() 함수에서 사용
+
+//////////////////////////////gpt S
+create_label(panel,
+             "현재시간 설정",
+             20, 20,
+             300, 45,
+             &font_kor_32,
+             COLOR_TEXT,
+             LV_TEXT_ALIGN_CENTER);
+//////////////////////////////gpt E
+
+7. 공통 한글 폰트 함수에 연결
+
+//////////////////////////////gpt S
+static const lv_font_t *timer_korean_font()
+{
+    return &font_kor_32;
+}
+//////////////////////////////gpt E
+
+8. 버튼 글자에 적용
+
+버튼 본체가 아니라 버튼 안의 label 객체에 적용합니다.
+
+//////////////////////////////gpt S
+lv_obj_t *button = lv_btn_create(lv_scr_act());
+lv_obj_set_size(button, 180, 60);
+
+lv_obj_t *button_label = lv_label_create(button);
+lv_label_set_text(button_label, "저장");
+
+lv_obj_set_style_text_font(
+    button_label,
+    &font_kor_32,
+    LV_PART_MAIN
+);
+
+lv_obj_center(button_label);
+//////////////////////////////gpt E
+
+9. 텍스트 영역에 적용
+
+//////////////////////////////gpt S
+lv_obj_t *text_area = lv_textarea_create(lv_scr_act());
+
+lv_textarea_set_text(text_area, "한글 문장을 입력합니다");
+
+lv_obj_set_style_text_font(
+    text_area,
+    &font_kor_32,
+    LV_PART_MAIN
+);
+//////////////////////////////gpt E
+
+10. 내부 인덱스 구조
+
+폰트 파일 안에는 다음 데이터가 이미 있습니다.
+
+    glyph_bitmap[] : 압축된 실제 글자 그림
+    glyph_dsc[]    : 폭, 높이, 위치, bitmap_index
+    cmaps[]        : 유니코드에서 glyph_id로 변환하는 인덱스
+
+한글 완성형 인덱스:
+
+    range_start    = 0xAC00
+    range_length   = 11172
+    glyph_id_start = 119
+
+개념적으로:
+
+    glyph_id = 119 + (unicode - 0xAC00)
+
+하지만 프로그램에서 직접 계산할 필요는 없습니다.
+lv_label_set_text()에 UTF-8 문자열을 넘기면 LVGL이 자동 처리합니다.
+
+11. 단독 자모 주의
+
+정상:
+    "한글"
+    "저장 완료"
+    "현재시간 설정"
+
+네모로 나올 수 있음:
+    "ㄱ"
+    "ㅏ"
+    "ㄱㅏ"
+
+자판의 단독 자모에는 font_jamo_32.c를 사용합니다.
+
+//////////////////////////////gpt S
+extern "C" {
+LV_FONT_DECLARE(font_jamo_32);
+}
+
+lv_obj_set_style_text_font(
+    jamo_label,
+    &font_jamo_32,
+    LV_PART_MAIN
+);
+//////////////////////////////gpt E
+
+12. 한글이 네모로 나올 때 확인
+
+1) font_kor_32.c가 실제 스케치 폴더에 있는지
+2) timer_ui.cpp에 LV_FONT_DECLARE(font_kor_32)가 있는지
+3) 라벨에 &font_kor_32가 실제 적용됐는지
+4) lv_conf.h의 두 설정이 1인지
+5) .ino/.cpp 파일이 UTF-8인지
+6) 단독 자모를 font_kor_32로 표시한 것은 아닌지
+
+13. 자주 발생하는 오류
+
+오류:
+    font_kor_32 compressed font requires LV_USE_FONT_COMPRESSED 1
+해결:
+    #define LV_USE_FONT_COMPRESSED 1
+
+오류:
+    font_kor_32 requires LV_FONT_FMT_TXT_LARGE 1
+해결:
+    #define LV_FONT_FMT_TXT_LARGE 1
+
+오류:
+    font_kor_32 was not declared in this scope
+해결:
+    extern "C" {
+    LV_FONT_DECLARE(font_kor_32);
+    }
+
+오류:
+    undefined reference to font_kor_32
+확인:
+    - font_kor_32.c가 프로젝트에 포함됐는지
+    - extern "C" 선언을 사용했는지
+    - 파일 이름과 확장자가 정확한지
+
+오류:
+    multiple definition of font_kor_32
+해결:
+    프로젝트 안의 중복 폰트 파일을 하나만 남김
+
+14. 최소 시험 코드
+
+//////////////////////////////gpt S
+extern "C" {
+LV_FONT_DECLARE(font_kor_32);
+}
+
+static void font_kor_32_test()
+{
+    lv_obj_t *label = lv_label_create(lv_scr_act());
+
+    lv_label_set_text(
+        label,
+        "가나다라마바사\n"
+        "한글 표시 시험\n"
+        "현재시간 저장 완료"
+    );
+
+    lv_obj_set_style_text_font(
+        label,
+        &font_kor_32,
+        LV_PART_MAIN
+    );
+
+    lv_obj_set_style_text_align(
+        label,
+        LV_TEXT_ALIGN_CENTER,
+        LV_PART_MAIN
+    );
+
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+}
+//////////////////////////////gpt E
+
+LVGL 초기화와 화면 생성 후 한 번 호출합니다.
+
+    font_kor_32_test();
+
+15. 최종 정리
+- 이 폰트는 실행 시 완성형 폰트로 동작합니다.
+- 한글 11,172자의 비트맵과 인덱스가 내부에 들어 있습니다.
+- UTF-8 한글 문자열을 lv_label_set_text()에 넣으면 됩니다.
+- 표시 객체에 &font_kor_32를 지정해야 합니다.
+- 단독 자모는 font_jamo_32를 사용해야 합니다.
+==================================================
