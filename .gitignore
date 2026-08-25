@@ -1,6 +1,5 @@
 build/
 build_verify/
 managed_components/
-sdkconfig
 sdkconfig.old
 video_frames/
