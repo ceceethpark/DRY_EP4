@@ -54,6 +54,13 @@ typedef struct {
 } FanCurrentSensorValue;
 
 typedef struct {
+    int raw;
+    int32_t reference_adc;
+    float velocity_ms;
+    bool valid;
+} FanVelocitySensorValue;
+
+typedef struct {
     int raw_level;
     bool open;
     bool valid;
@@ -63,8 +70,8 @@ typedef struct {
 typedef union _ALARM_INFO {
     struct {
         uint8_t door_open      : 1;
-        uint8_t thermist_short : 1;
-        uint8_t thermist_open  : 1;
+        uint8_t control_sensor_error : 1;//thermist_short
+        uint8_t weight_sensor_error : 1;//thermist_open
         uint8_t thermo_state   : 1;
         uint8_t fan_min_error  : 1;
         uint8_t fan_max_error  : 1;
@@ -94,10 +101,11 @@ _Static_assert(sizeof(EVENT_INFO) == sizeof(uint16_t),
 typedef struct {
     TemperatureHumidityValue temperature_humidity[DRYER_SENSOR_COUNT];
     LoadCellReading load_cell;
-    FanCurrentSensorValue fan_current;
+    FanVelocitySensorValue fan_velocity;
     DoorSensorValue door;
     EVENT_INFO event;
-    float blower_speed_ms;
+    int32_t remaining_time_min;
+    DryState operating_state;
     float damper_percent;
     TickType_t updated_at;
     uint32_t sequence;

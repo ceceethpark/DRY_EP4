@@ -18,6 +18,12 @@
 #define FAN_CURRENT_ZERO_MV             0.0F
 #define FAN_CURRENT_MV_PER_AMP       1000.0F
 #define FAN_CURRENT_SAMPLE_COUNT        16
+#define SENSOR_COMM_FAILURE_LIMIT        5
+#define FAN_SPEED_MIN_MPS              5.0F
+#define FAN_SPEED_MAX_MPS             15.0F
+#define OVER_HEAT_CONFIRM_SECONDS        5
+#define HEATER_NO_RISE_CONFIRM_SECONDS (20U * 60U)
+#define HEATER_MIN_DETECTABLE_RISE_C    0.5F
 
 /* The DryerApp timer runs once per second. */
 #define DRYER_COUNTDOWN_TICKS_PER_MINUTE 60
@@ -58,6 +64,8 @@
 #define DRYER_CFG_FAN_ADC_AT_10MS_MAX                4095
 #define DRYER_CFG_MQTT_PUBLISH_INTERVAL_MIN             1
 #define DRYER_CFG_MQTT_PUBLISH_INTERVAL_MAX          1440
+#define EQUIPMENT_ID_MIN                            100000
+#define EQUIPMENT_ID_MAX                            999999
 
 /* Frozen camera image upload server defaults (editable in settings). */
 #define IMAGE_UPLOAD_DEFAULT_IP1 192
@@ -66,3 +74,4 @@
 #define IMAGE_UPLOAD_DEFAULT_IP4 41
 #define IMAGE_UPLOAD_DEFAULT_PORT 8080
 #define IMAGE_UPLOAD_JPEG_QUALITY 80
+#define IMAGE_UPLOAD_HTTP_TIMEOUT_MS 2000

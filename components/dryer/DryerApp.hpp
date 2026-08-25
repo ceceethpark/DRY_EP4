@@ -44,9 +44,9 @@ public:
     bool startCommunication(void);
     void setSensorSource(RS485Sensor *sensors) { _rs485_sensors = sensors; }
     void setLoadCell(LoadCell *loadCell) { _load_cell = loadCell; }
-    float fanCurrentA() const { return g_dryer_sensor_values.fan_current.amperes; }
-    int fanCurrentRaw() const { return g_dryer_sensor_values.fan_current.raw; }
-    int fanCurrentMillivolts() const { return g_dryer_sensor_values.fan_current.millivolts; }
+    float fanVelocity() const { return g_dryer_sensor_values.fan_velocity.velocity_ms; }
+    int fanVelocityRaw() const { return g_dryer_sensor_values.fan_velocity.raw; }
+    int fanVelocityReferenceAdc() const { return g_dryer_sensor_values.fan_velocity.reference_adc; }
     const DryerSensorValues &sensorValues() const { return g_dryer_sensor_values; }
 
     /* Hook for real hardware sensor task */
@@ -61,6 +61,7 @@ private:
     lv_obj_t *_scr_cal;
     lv_obj_t *_scr_weight_cal;
     lv_obj_t *_scr_cooling;
+    lv_obj_t *_error_popup_overlay;
 
     /* ── Main · header live-value labels ────────────── */
     lv_obj_t *_lbl_hdr_dry_temp;   /* CUR TEMP value        */
@@ -122,6 +123,7 @@ private:
     lv_obj_t *_lbl_door_status;
     lv_obj_t *_lbl_server_time;
     lv_obj_t *_lbl_device_id;
+    lv_obj_t *_lbl_device_ip;
     lv_obj_t *_btn_set;
     lv_obj_t *_lbl_cal_sensor;
     lv_obj_t *_lbl_cal_temp;
@@ -193,6 +195,7 @@ private:
     float _blower_speed_ms;
     float _damper_percent;
     char _equipment_name[33];
+    int32_t _equipment_id;
     int   _cal_sensor;
     int   _cal_item;
     float _temp_cal[7];
@@ -209,6 +212,12 @@ private:
     /* ── Tick counters (1-s timer) ───────────────────── */
     int   _tick_s;           /* seconds within current minute */
     uint32_t _mqtt_publish_elapsed_s;
+    uint8_t _over_heat_seconds;
+    uint32_t _target_reach_elapsed_seconds;
+    bool _target_temperature_reached;
+    uint32_t _heater_continuous_on_seconds;
+    float _heater_on_start_temperature;
+    bool _heater_on_start_temperature_valid;
     int   _demo_tick;        /* demo speed multiplier counter */
 
     /* ── 5-min history for chart ─────────────────────── */
@@ -261,9 +270,10 @@ private:
     void updateSensorValues(void);
     void errorCheck(void);
     void processAlarmEvent(uint8_t bit, bool active);
+    void showErrorPopup(const char *title, const char *line1, const char *line2);
     void applyActuatorSafetyChecks(void);
     void writeActuatorOutputs(void);
-    void processMqttCommands(void);
+    bool processMqttCommands(void);
 
     /* ── Business-logic helpers ──────────────────────── */
     void doStartStop(void);
@@ -281,6 +291,7 @@ private:
                                        uint32_t width, uint32_t height,
                                        void *context);
     static void cbFanSpinTimer(lv_timer_t *t);
+    static void cbErrorPopupOk(lv_event_t *e);
     static void cbBtnSet(lv_event_t *e);
     static void cbLogoVision(lv_event_t *e);
     static void cbBtnPreheatStart(lv_event_t *e);

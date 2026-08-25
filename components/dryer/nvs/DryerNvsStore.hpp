@@ -16,4 +16,6 @@ public:
     bool loadCoolingSettings(DryerNvsCoolingSettings *value) const;
     bool saveEquipmentName(const char *name) const;
     bool loadEquipmentName(char *name, size_t size) const;
+    bool saveEquipmentInfo(const char *name, int32_t equipmentId) const;
+    bool loadEquipmentId(int32_t *equipmentId) const;
 };

@@ -20,6 +20,7 @@ struct MqttCommand {
     int8_t damperMode;  // 0=auto, 1=open, 2=close, -1=not supplied
     bool hasTemperature;
     bool hasTime;
+    int32_t equipmentId;
     char text[33];
 };
 
@@ -36,6 +37,7 @@ public:
     bool publishEvent(uint16_t eventValue);
     bool publishTelemetry(const DryerSensorValues &values);
     bool popCommand(MqttCommand &command);
+    void recordCommandHistory(const MqttCommand &command);
 
 private:
     esp_mqtt_client_handle_t _client;
@@ -50,7 +52,8 @@ private:
     size_t _commandWrite;
     size_t _commandCount;
     char _serverTime[20];
-    char _controlHistory[3][96];
+    static constexpr size_t CONTROL_HISTORY_DEPTH = 6;
+    char _controlHistory[CONTROL_HISTORY_DEPTH][96];
     size_t _controlHistoryCount;
 
     static void eventHandler(void *args, esp_event_base_t base,
@@ -59,4 +62,5 @@ private:
     void storeServerTime(const char *payload, int length);
     void handleTelemetry(const char *payload, int length);
     void storeCommand(const char *payload, int length);
+    void recordHistoryEntry(const char *message);
 };

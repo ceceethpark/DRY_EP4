@@ -41,6 +41,34 @@ bool DryerNvsStore::loadEquipmentName(char *name, size_t size) const
     return err == ESP_OK && name[0] != '\0';
 }
 
+bool DryerNvsStore::saveEquipmentInfo(const char *name, int32_t equipmentId) const
+{
+    if (!name || !name[0] || equipmentId < EQUIPMENT_ID_MIN || equipmentId > EQUIPMENT_ID_MAX)
+        return false;
+    nvs_handle_t h;
+    esp_err_t err = nvs_open(EQUIPMENT_NS, NVS_READWRITE, &h);
+    if (err != ESP_OK) return false;
+    err = nvs_set_str(h, "name", name);
+    if (err == ESP_OK) err = nvs_set_i32(h, "id", equipmentId);
+    if (err == ESP_OK) err = nvs_commit(h);
+    nvs_close(h);
+    return err == ESP_OK;
+}
+
+bool DryerNvsStore::loadEquipmentId(int32_t *equipmentId) const
+{
+    if (!equipmentId) return false;
+    nvs_handle_t h;
+    esp_err_t err = nvs_open(EQUIPMENT_NS, NVS_READONLY, &h);
+    if (err != ESP_OK) return false;
+    int32_t loaded = 0;
+    err = nvs_get_i32(h, "id", &loaded);
+    nvs_close(h);
+    if (err != ESP_OK || loaded < EQUIPMENT_ID_MIN || loaded > EQUIPMENT_ID_MAX) return false;
+    *equipmentId = loaded;
+    return true;
+}
+
 bool DryerNvsStore::saveCoolingSettings(const DryerNvsCoolingSettings &v) const
 {
     nvs_handle_t h;

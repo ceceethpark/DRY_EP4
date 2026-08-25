@@ -1,5 +1,6 @@
 #include "MqttClient.hpp"
 #include "MqttConfig.hpp"
+#include "config.h"
 
 #include <cstdio>
 #include <cstring>
@@ -13,6 +14,18 @@
 
 namespace {
 constexpr const char *TAG = "MqttClient";
+
+const char *dryStateName(DryState state)
+{
+    switch (state) {
+    case DRY_PREPARE: return "PREPARE";
+    case DRY_PREHEAT: return "PREHEAT";
+    case DRY_RUN: return "RUN";
+    case DRY_COOL: return "COOL";
+    case DRY_FINISH: return "FINISH";
+    default: return "UNKNOWN";
+    }
+}
 
 bool getEquipmentCode(char *out, size_t outSize)
 {
@@ -197,11 +210,69 @@ bool MqttClient::getControlHistory(char *out, size_t outSize) const
     for (size_t i = 0; i < _controlHistoryCount; ++i) {
         const size_t used = strlen(out);
         if (used + 1 >= outSize) break;
-        snprintf(out + used, outSize - used, "%s%s", i ? "\n" : "", _controlHistory[i]);
+        if (i == 0)
+            snprintf(out + used,outSize-used,"#00D8E8 %s#",_controlHistory[i]);
+        else
+            snprintf(out + used,outSize-used,"\n%s",_controlHistory[i]);
     }
     const bool available = _controlHistoryCount > 0;
     xSemaphoreGive(_lock);
     return available;
+}
+
+void MqttClient::recordHistoryEntry(const char *message)
+{
+    if (!_lock || !message || !message[0]) return;
+    char timestamp[12] = "--:--:--";
+    const time_t now = time(nullptr);
+    if (now > 1600000000) {
+        struct tm localTime {};
+        localtime_r(&now, &localTime);
+        strftime(timestamp, sizeof(timestamp), "%H:%M:%S", &localTime);
+    }
+    char entry[96] = {};
+    snprintf(entry,sizeof(entry),"%s %s",timestamp,message);
+    xSemaphoreTake(_lock,portMAX_DELAY);
+    for(size_t i=CONTROL_HISTORY_DEPTH-1;i>0;--i)
+        memcpy(_controlHistory[i],_controlHistory[i-1],sizeof(_controlHistory[i]));
+    snprintf(_controlHistory[0],sizeof(_controlHistory[0]),"%s",entry);
+    if(_controlHistoryCount<CONTROL_HISTORY_DEPTH)++_controlHistoryCount;
+    xSemaphoreGive(_lock);
+}
+
+void MqttClient::recordCommandHistory(const MqttCommand &command)
+{
+    const char *damper = command.damperMode == 0 ? "AUTO" :
+                          command.damperMode == 1 ? "OPEN" :
+                          command.damperMode == 2 ? "CLOSE" : "KEEP";
+    char entry[80] = {};
+    switch (command.type) {
+    case MqttCommandType::SetTemperature:
+        snprintf(entry,sizeof(entry),"<- SET TEMP %ldC",
+                 static_cast<long>(command.value)); break;
+    case MqttCommandType::SetTime:
+        snprintf(entry,sizeof(entry),"<- SET TIME %ldm",
+                 static_cast<long>(command.value)); break;
+    case MqttCommandType::PreheatStart:
+        snprintf(entry,sizeof(entry),"<- PREHEAT %ldC %ldm %s",
+                 static_cast<long>(command.temperature),
+                 static_cast<long>(command.timeMinutes),damper); break;
+    case MqttCommandType::DryStart:
+        snprintf(entry,sizeof(entry),"<- DRY START %ldC %ldm %s",
+                 static_cast<long>(command.temperature),
+                 static_cast<long>(command.timeMinutes),damper); break;
+    case MqttCommandType::DryStop:
+        snprintf(entry,sizeof(entry),"<- DRY STOP %s",damper); break;
+    case MqttCommandType::DamperAuto:
+    case MqttCommandType::DamperOpen:
+    case MqttCommandType::DamperClose:
+        snprintf(entry,sizeof(entry),"<- DAMPER %s",damper); break;
+    case MqttCommandType::SetEquipmentName:
+        snprintf(entry,sizeof(entry),"<- EQUIPMENT ID %06ld",
+                 static_cast<long>(command.equipmentId)); break;
+    default: return;
+    }
+    recordHistoryEntry(entry);
 }
 
 bool MqttClient::popCommand(MqttCommand &command)
@@ -233,16 +304,16 @@ bool MqttClient::publishEvent(uint16_t eventValue)
              _equipmentCode);
     const EVENT_INFO event{.data = eventValue};
     snprintf(payload, sizeof(payload),
-             "{\"data\":%u,\"doorOpen\":%s,\"thermistShort\":%s,"
-             "\"thermistOpen\":%s,\"thermoState\":%s,\"fanMinError\":%s,"
+             "{\"data\":%u,\"doorOpen\":%s,\"controlSensorError\":%s,"
+             "\"weightSensorError\":%s,\"thermoState\":%s,\"fanMinError\":%s,"
              "\"fanMaxError\":%s,\"heater1Error\":%s,\"heater2Error\":%s,"
              "\"memError\":%s,\"underHeat\":%s,\"overHeat\":%s,"
              "\"fanRelayOn\":%s,\"heaterRelayOn\":%s,\"damperRelayOn\":%s,"
              "\"reserved14\":%s,\"mqttConnect\":%s}",
              static_cast<unsigned>(event.data),
              event.door_open ? "true" : "false",
-             event.thermist_short ? "true" : "false",
-             event.thermist_open ? "true" : "false",
+             event.control_sensor_error ? "true" : "false",
+             event.weight_sensor_error ? "true" : "false",
              event.thermo_state ? "true" : "false",
              event.fan_min_error ? "true" : "false",
              event.fan_max_error ? "true" : "false",
@@ -266,6 +337,9 @@ bool MqttClient::publishEvent(uint16_t eventValue)
     }
     ESP_LOGI(TAG, "Event published: topic=%s payload=%s msg_id=%d", topic,
              payload, messageId);
+    char history[40];
+    snprintf(history,sizeof(history),"-> EVENT %u",static_cast<unsigned>(eventValue));
+    recordHistoryEntry(history);
     return true;
 }
 
@@ -304,24 +378,26 @@ bool MqttClient::publishTelemetry(const DryerSensorValues &values)
 
     const int written = snprintf(payload + used, sizeof(payload) - used,
         "},\"loadCell\":{\"raw\":%" PRId32 ",\"weightG\":%.2f,\"valid\":%s},"
-        "\"fanCurrent\":{\"raw\":%d,\"millivolts\":%d,\"amperes\":%.3f,\"valid\":%s},"
+        "\"fanVelocity\":{\"raw\":%d,\"constant\":%" PRId32 ",\"velocity\":%.2f,\"valid\":%s},"
         "\"door\":{\"rawLevel\":%d,\"open\":%s,\"valid\":%s},"
-        "\"event\":{\"data\":%u,\"doorOpen\":%s,\"thermistShort\":%s,"
-        "\"thermistOpen\":%s,\"thermoState\":%s,\"fanMinError\":%s,"
+        "\"event\":{\"data\":%u,\"doorOpen\":%s,\"controlSensorError\":%s,"
+        "\"weightSensorError\":%s,\"thermoState\":%s,\"fanMinError\":%s,"
         "\"fanMaxError\":%s,\"heater1Error\":%s,\"heater2Error\":%s,"
         "\"memError\":%s,\"underHeat\":%s,\"overHeat\":%s,"
         "\"fanRelayOn\":%s,\"heaterRelayOn\":%s,\"damperRelayOn\":%s,"
         "\"reserved14\":%s,\"mqttConnect\":%s},"
-        "\"blowerSpeedMs\":%.2f,\"damperPercent\":%.1f}",
+        "\"remainingTimeMinutes\":%" PRId32 ","
+        "\"operatingState\":%d,\"operatingStateName\":\"%s\","
+        "\"damperPercent\":%.1f}",
         values.load_cell.raw, static_cast<double>(values.load_cell.weight_g),
-        values.load_cell.valid ? "true" : "false", values.fan_current.raw,
-        values.fan_current.millivolts, static_cast<double>(values.fan_current.amperes),
-        values.fan_current.valid ? "true" : "false", values.door.raw_level,
+        values.load_cell.valid ? "true" : "false", values.fan_velocity.raw,
+        values.fan_velocity.reference_adc, static_cast<double>(values.fan_velocity.velocity_ms),
+        values.fan_velocity.valid ? "true" : "false", values.door.raw_level,
         values.door.open ? "true" : "false", values.door.valid ? "true" : "false",
         static_cast<unsigned>(values.event.data),
         values.event.door_open ? "true" : "false",
-        values.event.thermist_short ? "true" : "false",
-        values.event.thermist_open ? "true" : "false",
+        values.event.control_sensor_error ? "true" : "false",
+        values.event.weight_sensor_error ? "true" : "false",
         values.event.thermo_state ? "true" : "false",
         values.event.fan_min_error ? "true" : "false",
         values.event.fan_max_error ? "true" : "false",
@@ -335,7 +411,9 @@ bool MqttClient::publishTelemetry(const DryerSensorValues &values)
         values.event.damper_relay_on ? "true" : "false",
         values.event.x14 ? "true" : "false",
         values.event.mqtt_connect ? "true" : "false",
-        static_cast<double>(values.blower_speed_ms),
+        values.remaining_time_min,
+        static_cast<int>(values.operating_state),
+        dryStateName(values.operating_state),
         static_cast<double>(values.damper_percent));
     if (written < 0 || written >= static_cast<int>(sizeof(payload) - used)) return false;
 
@@ -347,6 +425,7 @@ bool MqttClient::publishTelemetry(const DryerSensorValues &values)
     }
     ESP_LOGI(TAG, "Telemetry published: topic=%s bytes=%d msg_id=%d",
              topic, used + written, messageId);
+    recordHistoryEntry("-> TELEMETRY");
     return true;
 }
 
@@ -389,7 +468,7 @@ void MqttClient::storeCommand(const char *payload, int length)
                          ? static_cast<size_t>(length) : sizeof(input) - 1U;
     memcpy(input, payload, n);
 
-    MqttCommand command{MqttCommandType::None, 0, 0, 0, -1, false, false, {}};
+    MqttCommand command{MqttCommandType::None, 0, 0, 0, -1, false, false, 0, {}};
     cJSON *root = cJSON_ParseWithLengthOpts(input, n + 1U, nullptr, 1);
     if (!cJSON_IsObject(root)) {
         cJSON_Delete(root);
@@ -448,7 +527,11 @@ void MqttClient::storeCommand(const char *payload, int length)
                        mode == 2 ? MqttCommandType::DamperClose : MqttCommandType::None;
     } else if (strcmp(name, "set_equipment_name") == 0) {
         const cJSON *value = cJSON_GetObjectItemCaseSensitive(root, "name");
-        if (cJSON_IsString(value) && value->valuestring && value->valuestring[0]) {
+        const bool hasEquipmentId = readInteger("equipment_id", command.equipmentId);
+        if (cJSON_IsString(value) && value->valuestring && value->valuestring[0] &&
+            strlen(value->valuestring) < sizeof(command.text) &&
+            hasEquipmentId && command.equipmentId >= EQUIPMENT_ID_MIN &&
+            command.equipmentId <= EQUIPMENT_ID_MAX) {
             snprintf(command.text, sizeof(command.text), "%s", value->valuestring);
             command.type = MqttCommandType::SetEquipmentName;
         }
@@ -521,13 +604,13 @@ void MqttClient::handleTelemetry(const char *payload, int length)
     xSemaphoreTake(_lock, portMAX_DELAY);
     memcpy(_serverTime, formatted, sizeof(_serverTime));
     _hasServerTime = true;
-    for (size_t i = 2; i > 0; --i)
+    for (size_t i = CONTROL_HISTORY_DEPTH - 1; i > 0; --i)
         memcpy(_controlHistory[i], _controlHistory[i - 1], sizeof(_controlHistory[i]));
     snprintf(_controlHistory[0], sizeof(_controlHistory[0]),
              "%02d:%02d:%02d STATE:%u PRE:%" PRIu32 "m DRY:%" PRIu32 "m DAMPER:%.0f%%",
              serverTm.tm_hour, serverTm.tm_min, serverTm.tm_sec,
              actual[96], readU32(actual + 84), readU32(actual + 88), readFloat(actual + 92));
-    if (_controlHistoryCount < 3) ++_controlHistoryCount;
+    if (_controlHistoryCount < CONTROL_HISTORY_DEPTH) ++_controlHistoryCount;
     xSemaphoreGive(_lock);
     ESP_LOGI(TAG, "Server time (KST): %s", formatted);
 }

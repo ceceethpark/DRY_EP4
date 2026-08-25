@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DY-EP4 건조기 사용설명서</title>
+<style>
+  :root{--navy:#12324a;--blue:#0067a3;--cyan:#008b9a;--green:#287d3c;--orange:#d35400;--red:#b3261e;--ink:#17212b;--muted:#5d6b78;--line:#d9e1e8;--paper:#fff;--soft:#f3f7fa}
+  *{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:#eaf0f4;color:var(--ink);font-family:"Malgun Gothic","Noto Sans KR",sans-serif;line-height:1.65}
+  header{background:linear-gradient(135deg,#0a2438,#006b83);color:#fff;padding:54px 7vw 46px} header h1{font-size:38px;margin:0 0 8px} header p{margin:0;color:#cce9ef;font-size:17px}.tag{display:inline-block;margin-top:20px;padding:5px 12px;border:1px solid #7ac5d2;border-radius:20px;font-size:13px}
+  .layout{max-width:1260px;margin:auto;display:grid;grid-template-columns:250px minmax(0,1fr);gap:24px;padding:24px}
+  nav{position:sticky;top:20px;align-self:start;background:#fff;border-radius:12px;padding:18px;box-shadow:0 4px 18px #28445b18} nav strong{display:block;margin-bottom:10px;color:var(--navy)} nav a{display:block;padding:6px 8px;color:#334b5e;text-decoration:none;border-left:3px solid transparent;font-size:14px}nav a:hover{background:#edf7f9;border-color:var(--cyan)}
+  main{background:var(--paper);border-radius:12px;padding:34px 42px;box-shadow:0 4px 18px #28445b18} section{scroll-margin-top:20px;margin-bottom:48px}h2{color:var(--navy);font-size:26px;border-bottom:2px solid var(--cyan);padding-bottom:8px;margin-top:0}h3{font-size:19px;color:var(--blue);margin-top:28px}h4{margin-bottom:5px}.lead{font-size:17px;color:#334b5e}.note,.warning,.danger{padding:14px 16px;border-radius:8px;margin:16px 0}.note{background:#eaf6fa;border-left:5px solid var(--cyan)}.warning{background:#fff7df;border-left:5px solid #e3a514}.danger{background:#fff0ee;border-left:5px solid var(--red)}
+  table{width:100%;border-collapse:collapse;margin:15px 0 22px;font-size:14px}th{background:var(--navy);color:white;text-align:left}th,td{padding:10px 11px;border:1px solid var(--line);vertical-align:top}tr:nth-child(even) td{background:#f8fafc}code,pre{font-family:Consolas,monospace}code{background:#edf2f5;padding:2px 5px;border-radius:4px}pre{background:#14222e;color:#d9f4f5;padding:16px;border-radius:8px;overflow:auto;font-size:13px}.steps{counter-reset:step;list-style:none;padding:0}.steps li{counter-increment:step;position:relative;margin:14px 0;padding:12px 14px 12px 54px;background:var(--soft);border-radius:8px}.steps li:before{content:counter(step);position:absolute;left:14px;top:11px;width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;text-align:center;line-height:28px;font-weight:bold}.state{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:15px 0}.state div{text-align:center;background:#eef4f7;padding:12px 5px;border-radius:7px;font-size:13px}.state b{display:block;color:var(--blue)}.chip{display:inline-block;padding:2px 8px;border-radius:12px;color:#fff;font-size:12px}.red{background:var(--red)}.blue{background:var(--blue)}.green{background:var(--green)}.gray{background:#697784}.orange{background:var(--orange)}
+  .command-table{table-layout:fixed;font-size:13px}.command-table th,.command-table td{word-break:keep-all;overflow-wrap:normal}.command-table code{display:inline;padding:1px 3px;white-space:normal;word-break:break-all;overflow-wrap:anywhere;line-height:1.55}.command-table td:last-child code{display:block}
+  footer{max-width:1260px;margin:0 auto 35px;padding:0 24px;color:#64727e;font-size:13px}.small{font-size:13px;color:var(--muted)}
+  .ui-figure{margin:18px 0 28px}.ui-screen{position:relative;width:100%;aspect-ratio:1024/600;background:#111;color:#fff;overflow:hidden;border:5px solid #263746;border-radius:5px;box-shadow:0 7px 20px #10253633}.ui-box{position:absolute;padding:1.2%;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;white-space:pre-line;font-size:clamp(8px,1.35vw,16px);line-height:1.35;border:1px solid #ffffff20}.ui-box.left{justify-content:flex-start;text-align:left}.ui-box b{font-size:1.15em}.ui-sensors{display:grid;grid-template-rows:repeat(6,minmax(0,1fr));padding:0}.ui-sensors span,.ui-data-row{display:grid;grid-template-columns:42% 18% 40%;align-items:center;min-height:0;padding:0 4%;color:#d5e3ed;font-size:clamp(7px,1.04vw,12px);line-height:1;white-space:nowrap}.ui-sensors span{overflow:hidden;border-bottom:1px solid #536675}.ui-sensors span i{font-style:normal;font-size:.83em}.ui-sensors span b,.ui-data-row b{text-align:right;color:#fff;font-size:inherit;white-space:nowrap}.ui-data-row{justify-content:initial;text-align:left;border-bottom:1px solid #536675}.ui-current{display:block;padding:0}.ui-current .title{position:absolute;left:0;right:0;top:7%;font-size:clamp(7px,1.05vw,13px)}.ui-current .temp,.ui-current .humidity{position:absolute;top:33%;width:50%;font-size:clamp(13px,2.25vw,28px);font-weight:bold}.ui-current .temp{left:0}.ui-current .humidity{left:50%}.ui-current .date{position:absolute;left:0;right:0;bottom:5%;font-size:clamp(7px,1.02vw,12px)}.ui-icons{display:grid;grid-template-columns:repeat(4,1fr);padding:0}.ui-icon{height:100%;display:grid;grid-template-rows:63% 18% 19%;align-items:center;text-align:center}.ui-icon .glyph{font-size:clamp(22px,4.3vw,52px);line-height:1;color:#c8d0d6}.ui-icon .icon-name,.ui-icon .icon-value{font-size:clamp(7px,1.05vw,13px);line-height:1}.ui-icon .icon-value{color:#dfe8ed}.ui-icon .cyan-value{color:#00d8e8}.ui-caption{margin-top:8px;text-align:center;color:var(--muted);font-size:13px}.ui-callouts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 18px}.ui-callouts div{padding:9px 10px;background:#edf5f8;border-left:4px solid var(--cyan);font-size:13px}.ui-callouts b{color:var(--blue)}
+  @media(max-width:850px){.layout{display:block;padding:10px}nav{position:static;margin-bottom:12px}main{padding:24px 18px}.state,.ui-callouts{grid-template-columns:1fr 1fr}header{padding:35px 24px}header h1{font-size:30px}}
+  @media print{body{background:#fff}.layout{display:block;max-width:none;padding:0}nav{display:none}main{box-shadow:none;padding:0}header{padding:25px;background:#fff;color:#000;border-bottom:3px solid #000}header p{color:#333}section{break-inside:avoid}.tag{border-color:#555}footer{padding:0}}
+</style>
+</head>
+<body>
+<header>
+  <h1>DY-EP4 건조기 사용설명서</h1>
+  <p>ESP32-P4 기반 터치 HMI · 운전, 설정, 보정 및 통신 안내</p>
+  <span class="tag">소프트웨어 기준일: 2026-08-03</span>
+</header>
+<div class="layout">
+<nav>
+  <strong>목차</strong>
+  <a href="#safety">1. 안전 주의사항</a><a href="#overview">2. 장비 개요</a><a href="#screen">3. 메인 화면</a><a href="#operation">4. 운전 방법</a><a href="#control">5. 자동 제어</a><a href="#settings">6. 설정 메뉴</a><a href="#calibration">7. 센서 보정</a><a href="#alarm">8. 오류 및 대응</a><a href="#vision">9. 영상 촬영·전송</a><a href="#network">10. MQTT·시간</a><a href="#service">11. 유지보수</a><a href="#trouble">12. 문제 해결</a>
+</nav>
+<main>
+<section id="safety">
+  <h2>1. 안전 주의사항</h2>
+  <div class="danger"><b>화재·화상 위험:</b> 히터, 덕트 및 건조실 내부가 충분히 식기 전에는 만지지 마십시오. 과열 팝업이 표시되면 원인을 확인하기 전 재가동하지 마십시오.</div>
+  <ul><li>팬, 히터, 댐퍼 배선과 접지는 전원을 차단한 상태에서 점검하십시오.</li><li>제어 온도센서(RS485 주소 100)가 끊어지면 장비가 자동 정지합니다. 이 기능을 우회하지 마십시오.</li><li>비상 상황에서는 화면 조작보다 주 전원 차단 장치를 먼저 사용하십시오.</li><li>문이 열려도 현재 소프트웨어에서는 히터 제어가 차단되지 않습니다. 문 열림은 상태 알림용입니다.</li></ul>
+</section>
+
+<section id="overview">
+  <h2>2. 장비 개요</h2>
+  <p class="lead">DY-EP4는 7개 온·습도센서, 로드셀, 팬 전류센서, 도어센서를 1초마다 읽고 팬·히터·댐퍼를 제어합니다.</p>
+  <div class="state"><div><b>PREPARE</b>운전 준비</div><div><b>PREHEAT</b>예열 운전</div><div><b>RUN</b>건조 운전</div><div><b>COOL</b>냉각 운전</div><div><b>FINISH</b>운전 종료</div></div>
+  <table><thead><tr><th>입력</th><th>용도</th><th>주기/주소</th></tr></thead><tbody>
+    <tr><td>제어 온·습도</td><td>히터 및 자동 댐퍼 제어 기준</td><td>RS485 주소 100</td></tr>
+    <tr><td>모니터 온·습도 6개</td><td>건조실 각 위치 감시</td><td>RS485 주소 101~106</td></tr>
+    <tr><td>무게</td><td>로드셀 무게 표시</td><td>RS485 주소 200</td></tr>
+    <tr><td>팬 전류</td><td>팬 전류 및 환산 풍속 감시</td><td>GPIO20 ADC</td></tr>
+    <tr><td>도어</td><td>문 열림 상태 감시</td><td>GPIO2</td></tr>
+  </tbody></table>
+  <h3>2.1 온·습도센서 사양</h3>
+  <p>DY-EP4의 온·습도 측정에는 <b>CWT-THxxS Series RS485 Temperature Humidity Sensor</b>를 사용합니다. 다음 값은 제조사 <i>CWT-THXXS TH sensor manual V1.0</i> 기준입니다.</p>
+  <table><thead><tr><th>항목</th><th>사양</th></tr></thead><tbody>
+    <tr><td>센서 모델</td><td>CWT-THxxS Series RS485 온·습도센서</td></tr>
+    <tr><td>전원</td><td>DC 5~24V, 소비전력 0.1W 미만</td></tr>
+    <tr><td>온도 측정</td><td>−30~80°C, 정확도 ±0.5°C, 분해능 0.1°C</td></tr>
+    <tr><td>습도 측정</td><td>0~100%RH, 정확도 ±5%RH, 분해능 0.1%RH</td></tr>
+    <tr><td>통신 출력</td><td>RS485, Modbus RTU, 장거리 통신 최대 800m</td></tr>
+    <tr><td>장비 통신 설정</td><td>4800 baud, No parity, 8 data bits, 1 stop bit(4800,N,8,1)</td></tr>
+    <tr><td>측정 레지스터</td><td><code>0x0000</code>: 습도(0.1%RH/LSB), <code>0x0001</code>: 온도(0.1°C/LSB), 읽기 Function Code <code>0x03</code></td></tr>
+    <tr><td>배선</td><td>갈색: 전원+, 검정: 전원−, 노랑 또는 녹색: RS485 A+, 파랑: RS485 B−</td></tr>
+  </tbody></table>
+  <div class="note"><b>DY-EP4 적용 주소:</b> 제조사 출고 기본 Slave ID는 1이지만 본 장비에서는 제어센서를 주소 <code>100</code>, 화면에 표시되는 온습도1~6 모니터센서를 주소 <code>101~106</code>으로 설정하여 사용합니다. 센서 교체 시 새 센서의 주소와 통신속도를 장비 설정에 맞춰야 합니다.</div>
+</section>
+
+<section id="screen">
+  <h2>3. 메인 화면 사용법</h2>
+  <figure class="ui-figure">
+    <div class="ui-screen" role="img" aria-label="DY-EP4 메인 화면 구성도">
+      <div class="ui-box" style="left:0;top:0;width:28.9%;height:19.3%;background:#f5f3ea;color:#1a4c72;font-size:clamp(14px,2.3vw,28px)"><b>hanwool</b></div>
+      <div class="ui-box ui-sensors left" style="left:0;top:20%;width:28.9%;height:45%;background:#202a33">
+        <span>온습도1 <i>(101)</i><b>25°C 75%</b></span><span>온습도2 <i>(102)</i><b>25°C 75%</b></span><span>온습도3 <i>(103)</i><b>26°C 74%</b></span><span>온습도4 <i>(104)</i><b>25°C 75%</b></span><span>온습도5 <i>(105)</i><b>25°C 75%</b></span><span>온습도6 <i>(106)</i><b>25°C 75%</b></span>
+      </div>
+      <div class="ui-box ui-data-row" style="left:0;top:65%;width:28.9%;height:7.5%;background:#202a33"><span>무게</span><i></i><b>-- g</b></div>
+      <div class="ui-box ui-data-row" style="left:0;top:72.5%;width:28.9%;height:7.5%;background:#202a33"><span>건조도</span><i></i><b>26 %</b></div>
+      <div class="ui-box left" style="left:0;top:80%;width:28.9%;height:20%;background:#12324a"><b>DY-EP4<br>ID ------</b></div>
+      <div class="ui-box ui-current" style="left:29.3%;top:0;width:22.9%;height:19.3%;background:#d35400"><span class="title">현재온도 / 습도</span><span class="temp">26°C</span><span class="humidity">74%</span><span class="date">2026-08-03 04:25</span></div>
+      <div class="ui-box" style="left:52.5%;top:0;width:22.9%;height:19.3%;background:#0067a3">설정온도<br><b>41°C</b></div>
+      <div class="ui-box" style="left:75.8%;top:0;width:11.7%;height:19.3%;background:#0067a3">설정온도<br><b>▲</b></div>
+      <div class="ui-box" style="left:87.9%;top:0;width:12.1%;height:19.3%;background:#0067a3">설정온도<br><b>▼</b></div>
+      <div class="ui-box left" style="left:29.3%;top:20%;width:22.9%;height:19.3%;background:#12324a">운전상태<br><b>대기</b></div>
+      <div class="ui-box" style="left:52.5%;top:20%;width:22.9%;height:19.3%;background:#663399">남은시간<br><b>00:00</b></div>
+      <div class="ui-box" style="left:75.8%;top:20%;width:11.7%;height:19.3%;background:#663399">건조시간<br><b>▲</b></div>
+      <div class="ui-box" style="left:87.9%;top:20%;width:12.1%;height:19.3%;background:#663399">건조시간<br><b>▼</b></div>
+      <div class="ui-box" style="left:29.3%;top:40%;width:22.9%;height:19.3%;background:#287d3c">예열온도　예열시간<br><b>41°C　10:00</b></div>
+      <div class="ui-box" style="left:52.5%;top:40%;width:22.9%;height:19.3%;background:#287d3c">남은예열시간<br><b>00:00</b></div>
+      <div class="ui-box" style="left:75.8%;top:40%;width:11.7%;height:12.7%;background:#287d3c">예열온도 ▲</div>
+      <div class="ui-box" style="left:87.9%;top:40%;width:12.1%;height:12.7%;background:#287d3c">예열시간 ▲</div>
+      <div class="ui-box" style="left:75.8%;top:53.3%;width:11.7%;height:12.7%;background:#287d3c">예열온도 ▼</div>
+      <div class="ui-box" style="left:87.9%;top:53.3%;width:12.1%;height:12.7%;background:#287d3c">예열시간 ▼</div>
+      <div class="ui-box left" style="left:29.3%;top:60%;width:46.1%;height:19.3%;background:#202a33">메시지<br><b>Waiting for server control...</b></div>
+      <div class="ui-box" style="left:75.8%;top:66.7%;width:24.2%;height:12.7%;background:#737b82"><b>예열　▶</b></div>
+      <div class="ui-box ui-icons" style="left:29.3%;top:80%;width:46.1%;height:20%;background:#263746">
+        <div class="ui-icon"><span class="glyph">♨</span><span class="icon-name">히터</span><span class="icon-value">OFF</span></div>
+        <div class="ui-icon"><span class="glyph">◉</span><span class="icon-name">송풍기</span><span class="icon-value cyan-value">0.0 m/s</span></div>
+        <div class="ui-icon"><span class="glyph">▥</span><span class="icon-name">댐퍼</span><span class="icon-value cyan-value">0 %</span></div>
+        <div class="ui-icon"><span class="glyph">▯</span><span class="icon-name">도어</span><span class="icon-value">CLOSE</span></div>
+      </div>
+      <div class="ui-box" style="left:75.8%;top:80%;width:24.2%;height:20%;background:#737b82"><b>건조　▶</b></div>
+    </div>
+    <figcaption class="ui-caption">그림 3-1. DY-EP4 메인 화면 배치(1024×600)</figcaption>
+  </figure>
+  <div class="ui-callouts"><div><b>좌측</b><br>센서값과 장비 정보를 확인합니다.</div><div><b>중앙</b><br>운전상태, 설정값과 메시지를 확인합니다.</div><div><b>우측</b><br>설정값 변경과 예열·건조 운전을 조작합니다.</div></div>
+  <table><thead><tr><th>화면 영역</th><th>표시 및 조작</th></tr></thead><tbody>
+    <tr><td>좌측 센서 표</td><td>제어 및 모니터 온·습도, 무게, 건조도를 표시합니다. 센서 표를 길게 누르면 온·습도 보정 화면으로 이동합니다.</td></tr>
+    <tr><td>무게 영역</td><td>현재 무게를 g 또는 kg으로 표시합니다. 길게 누르면 로드셀 보정 화면으로 이동합니다.</td></tr>
+    <tr><td>중앙 설정 영역</td><td>설정온도, 건조시간, 예열온도, 예열시간을 표시합니다.</td></tr>
+    <tr><td>메시지 영역</td><td>별도의 메시지 타이틀 없이 서버에서 수신하여 정상 적용된 최근 MQTT 명령 6건을 최신순으로 표시합니다. 가장 최근 수신한 명령은 청록색, 이전 5건은 흰색이며 각 줄에는 수신 시각, 동작 종류, 온도·시간·댐퍼 등의 주요 값이 표시됩니다.</td></tr>
+    <tr><td>우측 ▲/▼</td><td>해당 값을 변경합니다. 길게 누르면 연속 변경됩니다.</td></tr>
+    <tr><td>예열 버튼</td><td>예열을 시작하거나 중지합니다.</td></tr>
+    <tr><td>건조 버튼</td><td>건조 시작/정지를 전환합니다.</td></tr>
+    <tr><td>팬·히터·댐퍼 아이콘</td><td>현재 릴레이 및 풍속 상태를 표시합니다. 댐퍼 영역을 누르면 자동→열림→닫힘 순으로 바뀝니다.</td></tr>
+    <tr><td>건조기 이름/ID</td><td>서버에서 지정한 장비명은 타일 전체의 좌우·상하 중앙에 표시하고, 6자리 장비 ID는 하단 중앙에 <code>ID: 100001</code> 형식으로 표시합니다. 길게 누르면 건조기 설정 메뉴로 이동합니다.</td></tr>
+    <tr><td>회사 로고</td><td>누르면 카메라 프리뷰를 열거나 닫습니다.</td></tr>
+  </tbody></table>
+  <p><span class="chip red">적색</span> 히터 ON/경고, <span class="chip blue">청색</span> 목표온도 도달 지연, <span class="chip green">녹색</span> 정상·열림, <span class="chip gray">회색</span> OFF 상태를 뜻합니다.</p>
+</section>
+
+<section id="operation">
+  <h2>4. 운전 방법</h2>
+  <h3>4.1 운전 전 점검</h3>
+  <ol class="steps"><li>건조실 내부와 흡·배기 통로에 이물질이 없는지 확인합니다.</li><li>메인 화면에서 제어 온·습도와 팬 전류가 정상 표시되는지 확인합니다.</li><li>도어 상태와 댐퍼 모드를 확인합니다.</li><li>오류 팝업 또는 비정상적으로 어두운 무게 표시가 없는지 확인합니다.</li></ol>
+  <h3>4.2 예열</h3>
+  <ol class="steps"><li>예열온도와 예열시간을 ▲/▼ 버튼으로 설정합니다.</li><li><b>예열</b> 버튼을 누릅니다. 팬과 히터가 운전하며 남은 예열시간이 감소합니다.</li><li>예열시간이 끝나면 준비 상태로 복귀합니다. 중간에 중단하려면 예열 버튼을 다시 누릅니다.</li></ol>
+  <h3>4.3 건조 및 냉각</h3>
+  <ol class="steps"><li>설정온도와 건조시간을 지정합니다.</li><li>필요하면 댐퍼를 자동, 열림 또는 닫힘으로 선택합니다.</li><li><b>건조</b> 버튼을 누릅니다. 버튼은 정지 아이콘으로 변경됩니다.</li><li>건조시간 종료 후 설정된 냉각시간이 0보다 크면 COOL 상태로 전환됩니다.</li><li>운전을 수동 종료하려면 건조 정지 버튼을 누릅니다.</li></ol>
+  <div class="note">남은 운전 상태는 NVS에 저장됩니다. 단, 안전 오류가 발생하면 남은 시간과 운전 상태가 종료 상태로 변경될 수 있습니다.</div>
+</section>
+
+<section id="control">
+  <h2>5. 자동 제어 방식</h2>
+  <h3>온도 히스테리시스</h3>
+  <p>예열과 건조 모두 동일한 설정값을 사용합니다.</p>
+  <ul><li>현재온도 ≤ 목표온도 − 히스테리시스: 히터 ON</li><li>현재온도 ≥ 목표온도: 히터 OFF</li><li>두 값 사이: 이전 히터 상태 유지</li></ul>
+  <p class="small">예: 목표 64°C, 히스테리시스 2°C이면 62°C 이하에서 켜지고 64°C 이상에서 꺼집니다.</p>
+  <h3>자동 댐퍼</h3>
+  <ul><li>습도 ≥ 댐퍼 열림 습도: 완전 열림(100%)</li><li>습도 ≤ 열림 습도 − 댐퍼 히스테리시스: 완전 닫힘(0%)</li><li>두 값 사이 또는 센서 무효: 이전 상태 유지</li></ul>
+  <p class="small">예: 열림 50%, 히스테리시스 5%이면 50%에서 열리고 45%까지 내려가야 닫힙니다.</p>
+  <h3>팬 풍속 환산</h3><p><code>풍속(m/s) = 현재 ADC × 10 ÷ 팬 10m/s 기준 ADC</code></p><p>기본 기준 ADC는 1135이므로 ADC 1135가 10.0m/s로 표시됩니다.</p>
+</section>
+
+<section id="settings">
+  <h2>6. 건조기 설정 메뉴</h2>
+  <p>메인 화면 좌측 하단의 <b>건조기 이름/ID</b> 타일을 길게 누릅니다. ▲/▼로 항목을 선택하고 +/−로 값을 변경합니다. 변경 후 반드시 <b>저장 후 종료</b>를 누르십시오.</p>
+  <table><thead><tr><th>항목</th><th>기본값</th><th>범위</th><th>설명</th></tr></thead><tbody>
+    <tr><td>시작 건조 온도</td><td>64°C</td><td>10~90°C</td><td>기본 건조 목표온도</td></tr>
+    <tr><td>시작 건조 시간</td><td>840분</td><td>0~1440분</td><td>기본 건조시간</td></tr>
+    <tr><td>온도 제어 히스테리시스</td><td>2°C</td><td>1~20°C</td><td>히터 재가동 온도차</td></tr>
+    <tr><td>쿨링 온도</td><td>30°C</td><td>10~90°C</td><td>냉각 운전 목표온도</td></tr>
+    <tr><td>쿨링 시간</td><td>5분</td><td>0~1440분</td><td>건조 후 냉각시간</td></tr>
+    <tr><td>댐퍼 동작</td><td>자동</td><td>자동/열림/닫힘</td><td>댐퍼 운전 모드</td></tr>
+    <tr><td>댐퍼 열림 습도</td><td>50%</td><td>0~100%</td><td>자동 모드 열림 기준</td></tr>
+    <tr><td>댐퍼 제어 히스테리시스</td><td>5%</td><td>1~50%</td><td>자동 모드 닫힘 여유값</td></tr>
+    <tr><td>건조기 고온 경고</td><td>90°C</td><td>10~120°C</td><td>5초 연속 초과 시 과열 정지</td></tr>
+    <tr><td>저온 경고 도달 시간</td><td>320분</td><td>1~1440분</td><td>목표온도 도달 제한시간</td></tr>
+    <tr><td>최저 온도 상승 속도</td><td>15°C/분</td><td>1~60°C/분</td><td>온도 상승 감시용 설정값</td></tr>
+    <tr><td>팬 10m/s 기준 ADC</td><td>1135</td><td>1~4095</td><td>팬 풍속 환산 보정값</td></tr>
+    <tr><td>MQTT 전송 주기</td><td>5분</td><td>1~1440분</td><td>센서 텔레메트리 전송 간격</td></tr>
+    <tr><td>HTTP 서버 IP-1~4</td><td>192.168.0.41</td><td>각 0~255</td><td>촬영 이미지 수신 서버 주소</td></tr>
+    <tr><td>HTTP 서버 포트</td><td>8080</td><td>1~65535</td><td>이미지 서버 포트</td></tr>
+  </tbody></table>
+  <div class="warning"><b>기본값 초기화</b>는 화면의 모든 설정을 기본값으로 되돌립니다. 실제 반영하려면 이어서 <b>저장 후 종료</b>를 눌러야 합니다.</div>
+</section>
+
+<section id="calibration">
+  <h2>7. 센서 보정</h2>
+  <h3>7.1 온·습도센서</h3>
+  <ol class="steps"><li>좌측 온·습도 센서 영역을 길게 누릅니다.</li><li>UP/DOWN으로 7개 센서의 온도 또는 습도 항목을 선택합니다.</li><li>+/−로 보정값을 0.1 단위로 변경합니다. 온도는 −20~+20°C, 습도는 −50~+50% 범위입니다.</li><li><b>SAVE &amp; EXIT</b>로 저장합니다. <b>EXIT</b>는 변경 전 값으로 돌아갑니다.</li></ol>
+  <h3>7.2 로드셀</h3>
+  <ol class="steps"><li>무게 영역을 길게 누릅니다.</li><li>저울을 비우고 <b>ZERO</b>를 누릅니다.</li><li>알려진 기준 추를 올리고 REFERENCE 값을 실제 무게로 맞춥니다.</li><li><b>SET WEIGHT</b>를 누른 뒤 표시값을 확인합니다.</li><li><b>SAVE &amp; EXIT</b>로 저장합니다.</li></ol>
+</section>
+
+<section id="alarm">
+  <h2>8. 오류 및 대응</h2>
+  <table><thead><tr><th>오류</th><th>발생 조건</th><th>장비 동작 / 조치</th></tr></thead><tbody>
+    <tr><td>CONTROL SENSOR ERROR</td><td>주소 100 통신 5회 연속 실패</td><td>팬·히터 OFF, 운전 완전 정지, 팝업. 배선·전원·주소·통신속도를 확인합니다.</td></tr>
+    <tr><td>WEIGHT SENSOR ERROR</td><td>주소 200 통신 5회 연속 실패</td><td>무게 글자가 어두워집니다. 로드셀 변환기와 RS485 배선을 확인합니다.</td></tr>
+    <tr><td>FAN MIN ERROR</td><td>팬 동작 중 풍속 5.0m/s 미만</td><td>팬 회전, 벨트, 흡입구 막힘 및 ADC 보정값을 확인합니다.</td></tr>
+    <tr><td>FAN MAX ERROR</td><td>팬 동작 중 풍속 15.0m/s 초과</td><td>팬 구동 상태 및 ADC 보정값을 확인합니다.</td></tr>
+    <tr><td>UNDER HEAT ERROR</td><td>가열 시작 후 설정된 시간까지 목표온도 미도달</td><td>히터 아이콘 청색 및 팝업. 히터 용량, 전원, 문·덕트 누설을 확인합니다.</td></tr>
+    <tr><td>HEATER 1 ERROR</td><td>히터 릴레이 20분 연속 ON 중 온도 상승이 0.5°C 미만</td><td>팝업. 히터 전원, 접촉기, 단선 및 온도센서를 점검합니다.</td></tr>
+    <tr><td>OVER HEAT ERROR</td><td>고온 경고 설정값을 5초 연속 초과</td><td>팬·히터 OFF, 운전 정지, 팝업. 충분히 냉각 후 원인을 제거합니다.</td></tr>
+    <tr><td>DOOR OPEN</td><td>도어센서 열림 감지</td><td>상태 이벤트만 발생하며 히터 인터록은 하지 않습니다.</td></tr>
+    <tr><td>MQTT CONNECT</td><td>MQTT 서버 연결 상태 변화</td><td>연결되면 이벤트 비트가 1로 설정됩니다.</td></tr>
+  </tbody></table>
+  <div class="danger">과열 또는 제어센서 오류 후에는 팝업만 닫고 즉시 재가동하지 마십시오. 실제 원인과 출력 릴레이 상태를 먼저 확인하십시오.</div>
+</section>
+
+<section id="vision">
+  <h2>9. 영상 촬영 및 서버 전송</h2>
+  <ol class="steps"><li>PC에서 <code>http_server</code> 폴더의 서버를 <code>npm start</code>로 실행합니다.</li><li>설정 메뉴의 HTTP IP와 포트가 서버 PC 주소와 일치하는지 확인합니다.</li><li>메인 화면의 회사 로고를 눌러 카메라 프리뷰를 엽니다.</li><li>물체를 화면 중앙의 가로·세로 60% 안내 사각형 안에 고정합니다.</li><li><b>FREEZE</b> 버튼으로 영상을 고정하고 <b>SEND</b>를 누릅니다.</li><li>SENDING → SENT 표시를 확인합니다. FAILED이면 네트워크와 서버를 점검합니다.</li></ol>
+  <p>안내 사각형 내부만 잘라 JPEG 품질 80으로 변환하며 다음 주소로 전송합니다.</p>
+  <pre>POST http://{설정IP}:{포트}/api/dryers/{12자리 장비MAC}/captures
+Content-Type: image/jpeg</pre>
+</section>
+
+<section id="network">
+  <h2>10. MQTT 및 현재시간</h2>
+  <p class="lead">MQTT를 이용하면 서버나 PC에서 장비를 원격 운전하고 센서값과 오류 상태를 받을 수 있습니다. 명령은 반드시 UTF-8의 정상적인 JSON 한 개로 전송해야 합니다.</p>
+
+  <h3>10.1 접속 정보</h3>
+  <table><thead><tr><th>항목</th><th>현재 설정</th><th>설명</th></tr></thead><tbody>
+    <tr><td>브로커</td><td><code>mqtt://182.208.84.190:1883</code></td><td>암호화되지 않은 일반 MQTT TCP 연결</td></tr>
+    <tr><td>Client ID</td><td><code>dy-ep4-{MAC}</code></td><td>예: <code>dy-ep4-80F1B2D37D16</code></td></tr>
+    <tr><td>QoS</td><td>1</td><td>명령, 텔레메트리, 이벤트 모두 최소 한 번 전달</td></tr>
+    <tr><td>Retain</td><td>사용 안 함</td><td>장비가 발행한 메시지를 브로커에 retained 메시지로 남기지 않음</td></tr>
+    <tr><td>Keep Alive</td><td>30초</td><td>연결이 끊기면 약 5초 간격으로 자동 재접속</td></tr>
+    <tr><td>계정</td><td>현재 없음</td><td>사용자명과 비밀번호 없이 접속하는 현재 펌웨어 기준</td></tr>
+  </tbody></table>
+  <div class="warning">1883 포트는 암호화되지 않습니다. 공용망에서 운용할 때에는 방화벽/VPN을 적용하거나 펌웨어를 TLS 포트 8883 및 인증 방식으로 변경하십시오.</div>
+
+  <h3>10.2 장비 MAC 확인 및 토픽 구성</h3>
+  <p>장비 코드는 메인 화면 좌측 하단에 표시되는 Ethernet Base MAC입니다. 콜론(<code>:</code>)을 제거하고 영문을 대문자로 만든 12자리를 사용합니다.</p>
+  <pre>화면 MAC: 80:F1:B2:D3:7D:16
+장비 코드: 80F1B2D37D16</pre>
+  <table><thead><tr><th>방향</th><th>기능</th><th>토픽 예시</th></tr></thead><tbody>
+    <tr><td>장비 → 서버</td><td>주기 센서값</td><td><code>dryers/80F1B2D37D16/telemetry</code></td></tr>
+    <tr><td>장비 → 서버</td><td>오류·릴레이·연결 상태 변경</td><td><code>dryers/80F1B2D37D16/event</code></td></tr>
+    <tr><td>서버 → 장비</td><td>원격 명령</td><td><code>dryers/80F1B2D37D16/command</code></td></tr>
+  </tbody></table>
+  <p>여러 장비를 한 번에 감시하려면 서버에서 <code>dryers/+/telemetry</code>와 <code>dryers/+/event</code>를 구독할 수 있습니다. 명령은 반드시 대상 장비의 정확한 MAC 토픽으로 발행하십시오.</p>
+
+  <h3>10.3 원격 명령 JSON</h3>
+  <p>서버는 아래 <b>발행 토픽</b>으로 JSON payload를 QoS 1로 전송합니다. 토픽은 JSON 내부 필드가 아니라 MQTT 메시지의 목적지이며, 예시의 <code>80F1B2D37D16</code>은 실제 대상 장비 MAC 12자리로 변경해야 합니다.</p>
+  <table class="command-table"><colgroup><col style="width:16%"><col style="width:25%"><col style="width:25%"><col style="width:34%"></colgroup><thead><tr><th>명령</th><th>필수 필드와 범위</th><th>발행 토픽</th><th>완전한 JSON payload 예시</th></tr></thead><tbody>
+    <tr><td>현재 목표온도 변경</td><td><code>temp</code>: 정수 10~90°C<br>현재 운전에 사용하는 목표온도만 변경하며 시작 건조온도와 설정 메뉴값은 변경하지 않음</td><td><code>dryers/80F1B2D37D16/command</code></td><td><code>{"command":"set_temp","temp":64}</code></td></tr>
+    <tr><td>현재 남은시간 변경</td><td><code>time</code>: 정수 0~1440분<br>현재 운전의 남은시간만 변경하며 기본 건조시간과 설정 메뉴값은 변경하지 않음</td><td><code>dryers/80F1B2D37D16/command</code></td><td><code>{"command":"set_time","time":840}</code></td></tr>
+    <tr><td>예열 시작</td><td><code>preheat_temp</code>: 30~90°C<br><code>preheat_time</code>: 0~120분<br><code>damper</code>: 모드 문자열</td><td><code>dryers/80F1B2D37D16/command</code></td><td><code>{"command":"preheat_start","preheat_temp":60,"preheat_time":30,"damper":"auto"}</code></td></tr>
+    <tr><td>건조 시작</td><td><code>dry_temp</code>: 10~90°C<br><code>dry_time</code>: 0~1440분<br><code>damper</code>: 모드 문자열</td><td><code>dryers/80F1B2D37D16/command</code></td><td><code>{"command":"dry_start","dry_temp":64,"dry_time":840,"damper":"auto"}</code></td></tr>
+    <tr><td>건조 정지</td><td><code>damper</code>: 선택사항<br><code>auto</code>, <code>open</code>, <code>close</code></td><td><code>dryers/80F1B2D37D16/command</code></td><td><code>{"command":"dry_stop","damper":"close"}</code></td></tr>
+    <tr><td>댐퍼 모드 변경</td><td><code>mode</code>: <code>auto</code>, <code>open</code>, <code>close</code></td><td><code>dryers/80F1B2D37D16/command</code></td><td><code>{"command":"damper","mode":"open"}</code></td></tr>
+    <tr><td>장비 이름·ID 등록/변경</td><td><code>name</code>: 비어 있지 않은 UTF-8 문자열, 최대 32바이트<br><code>equipment_id</code>: 정수 100000~999999</td><td><code>dryers/80F1B2D37D16/command</code></td><td><code>{"command":"set_equipment_name","name":"1호 건조기","equipment_id":100001}</code></td></tr>
+  </tbody></table>
+  <h4>토픽을 포함한 전체 전송 예시</h4>
+  <pre>MQTT Broker: mqtt://182.208.84.190:1883
+QoS: 1
+Retain: false
+Topic: dryers/80F1B2D37D16/command
+Payload:
+{
+  "command": "dry_start",
+  "dry_temp": 64,
+  "dry_time": 840,
+  "damper": "auto"
+}</pre>
+  <h4>장비 최초 접속 및 서버 등록 순서</h4>
+  <ol class="steps"><li>장비가 MQTT 브로커에 연결되면 내부 <code>mqtt_connect</code> 비트가 0에서 1로 변경됩니다.</li><li>장비는 <code>dryers/{장비MAC}/event</code> 토픽으로 <code>mqttConnect:true</code>가 포함된 현재 이벤트 전체값을 전송합니다.</li><li>서버는 토픽의 12자리 MAC을 장비 고유 통신키로 사용하여 등록 장비를 조회하거나 신규 장비를 생성합니다.</li><li>서버는 해당 장비의 command 토픽으로 장비명과 서버 관리용 6자리 장비 ID를 전송합니다.</li><li>장비는 이름과 ID의 형식을 검사한 후 NVS에 함께 저장하고 메인 화면 좌측 하단에 <b>장비이름 / ID 6자리</b>를 표시합니다.</li></ol>
+  <pre>서버 → 장비 토픽
+dryers/80F1B2D37D16/command
+
+서버 → 장비 페이로드
+{"command":"set_equipment_name","name":"DRYER-01","equipment_id":100001}</pre>
+  <table><thead><tr><th>필드</th><th>자료형·범위</th><th>필수 여부</th><th>설명</th></tr></thead><tbody>
+    <tr><td><code>command</code></td><td>문자열 <code>set_equipment_name</code></td><td>필수</td><td>장비정보 등록·변경 명령</td></tr>
+    <tr><td><code>name</code></td><td>비어 있지 않은 UTF-8 문자열<br>최대 32바이트</td><td>필수</td><td>화면과 이미지 업로드 헤더에 사용할 장비 이름. 한글은 한 글자당 일반적으로 3바이트이므로 바이트 길이에 주의합니다.</td></tr>
+    <tr><td><code>equipment_id</code></td><td>JSON 정수<br>100000~999999</td><td>필수</td><td>서버에서 관리하는 6자리 장비 ID</td></tr>
+  </tbody></table>
+  <div class="note">장비 ID는 MAC을 대신하는 MQTT 토픽 키가 아닙니다. MQTT 토픽과 Client ID는 계속 장비 MAC을 사용하고, <code>equipment_id</code>는 서버 업무용 식별값과 화면 표시용으로 사용합니다.</div>
+  <div class="warning"><code>name</code> 또는 <code>equipment_id</code>가 누락되거나, 이름이 UTF-8 기준 32바이트를 초과하거나, ID가 100000~999999 범위를 벗어나면 장비는 명령 전체를 무시하며 기존 장비정보를 유지합니다.</div>
+  <div class="note"><b>댐퍼 문자열은 영문 소문자만 허용:</b> <code>auto</code>는 습도 자동제어, <code>open</code>은 완전 열림, <code>close</code>는 완전 닫힘입니다. 숫자 0/1/2 또는 한글 문자열은 처리되지 않습니다.</div>
+  <p>숫자 필드는 JSON 정수여야 합니다. 필드 누락, 범위 초과, 잘못된 명령명, 끝에 다른 문자가 붙은 JSON은 무시됩니다. 명령 큐에는 최대 8개가 저장되며 넘치면 가장 오래된 명령부터 삭제됩니다.</p>
+
+  <h3>10.4 PC에서 명령 시험</h3>
+  <p>Mosquitto 클라이언트가 설치된 PC에서는 아래와 같이 확인할 수 있습니다. 예제의 MAC은 실제 장비 MAC으로 바꾸십시오.</p>
+  <pre>mosquitto_sub -h 182.208.84.190 -p 1883 -q 1 -t "dryers/80F1B2D37D16/#" -v
+
+mosquitto_pub -h 182.208.84.190 -p 1883 -q 1 \
+  -t "dryers/80F1B2D37D16/command" \
+  -m '{"command":"set_temp","temp":64}'</pre>
+  <p class="small">Windows 명령 프롬프트에서는 줄바꿈 문자(<code>\</code>) 없이 한 줄로 실행하십시오. PowerShell에서는 JSON 따옴표가 변형되지 않도록 위와 같이 작은따옴표로 전체 페이로드를 묶습니다.</p>
+
+  <h3>10.5 텔레메트리 메시지</h3>
+  <p>설정 메뉴의 <b>MQTT 전송 주기</b>(기본 5분)마다 최신 1초 센서 스냅샷을 발행합니다. 이 정규 주기와 별도로, 장비가 서버에서 유효한 <code>command</code>를 수신하여 처리하면 해당 명령의 제어 출력을 적용한 직후 텔레메트리를 한 번 즉시 발행합니다. 따라서 서버는 다음 정규 전송 시각까지 기다리지 않고 명령 적용 후 상태를 확인할 수 있습니다.</p>
+  <div class="note"><b>명령 응답 텔레메트리:</b> 정상적으로 파싱되어 명령 큐에서 처리된 명령만 즉시 전송을 발생시킵니다. 잘못된 JSON, 알 수 없는 명령 또는 범위를 벗어난 필드는 무시되며 응답 텔레메트리를 발생시키지 않습니다. 즉시 전송은 기존 MQTT 전송 주기 카운터를 초기화하지 않습니다.</div>
+  <p>MQTT가 끊긴 동안에는 전송을 건너뛰며, 연결되지 않은 상태에서 명령 응답 또는 정규 텔레메트리를 발행할 수 없습니다.</p>
+  <p class="small">아래 예제는 펌웨어가 발행하는 모든 텔레메트리 필드를 포함한 완전한 JSON 샘플입니다.</p>
+  <pre>{
+  "sequence": 125,
+  "updatedAtTicks": 820100,
+  "temperatureHumidity": {
+    "sensor1": {"temperatureC": 41.20, "humidityPct": 73.50, "valid": true, "updatedAtTicks": 820000},
+    "sensor2": {"temperatureC": 40.90, "humidityPct": 72.80, "valid": true, "updatedAtTicks": 820010},
+    "sensor3": {"temperatureC": 41.10, "humidityPct": 73.10, "valid": true, "updatedAtTicks": 820020},
+    "sensor4": {"temperatureC": 40.70, "humidityPct": 72.40, "valid": true, "updatedAtTicks": 820030},
+    "sensor5": {"temperatureC": 41.30, "humidityPct": 71.90, "valid": true, "updatedAtTicks": 820040},
+    "sensor6": {"temperatureC": 40.80, "humidityPct": 72.20, "valid": true, "updatedAtTicks": 820050},
+    "sensor7": {"temperatureC": 41.00, "humidityPct": 72.60, "valid": true, "updatedAtTicks": 820060}
+  },
+  "loadCell": {"raw": 123456, "weightG": 8500.00, "valid": true},
+  "fanVelocity": {"raw": 1135, "constant": 1135, "velocity": 10.00, "valid": true},
+  "door": {"rawLevel": 0, "open": false, "valid": true},
+  "event": {
+    "data": 47104,
+    "doorOpen": false,
+    "controlSensorError": false,
+    "weightSensorError": false,
+    "thermoState": false,
+    "fanMinError": false,
+    "fanMaxError": false,
+    "heater1Error": false,
+    "heater2Error": false,
+    "memError": false,
+    "underHeat": false,
+    "overHeat": false,
+    "fanRelayOn": true,
+    "heaterRelayOn": true,
+    "damperRelayOn": true,
+    "reserved14": false,
+    "mqttConnect": true
+  },
+  "remainingTimeMinutes": 720,
+  "operatingState": 2,
+  "operatingStateName": "RUN",
+  "damperPercent": 100.0
+}</pre>
+  <table><thead><tr><th>필드</th><th>전송 예시값</th><th>자료형·전송 범위</th><th>의미</th></tr></thead><tbody>
+    <tr><td><code>sequence</code></td><td><code>125</code></td><td>uint32, 0~4,294,967,295</td><td>1초 센서 갱신 때마다 증가하는 순번이며 최댓값 이후 순환할 수 있음</td></tr>
+    <tr><td><code>updatedAtTicks</code></td><td><code>820100</code></td><td>uint32, 0~4,294,967,295</td><td>전체 스냅샷 갱신 시점의 FreeRTOS Tick. Unix 시간이 아님</td></tr>
+    <tr><td><code>temperatureHumidity.sensor1</code></td><td><code>{...}</code></td><td>객체 1개</td><td>RS485 주소 100 제어센서</td></tr>
+    <tr><td><code>temperatureHumidity.sensor2~sensor7</code></td><td><code>{...}</code></td><td>객체 6개</td><td>RS485 주소 101~106 모니터센서</td></tr>
+    <tr><td><code>sensorN.temperatureC</code></td><td><code>41.20</code></td><td>float, 펌웨어 제한 없음<br>센서 측정범위 적용</td><td>보정값이 반영된 온도(°C)</td></tr>
+    <tr><td><code>sensorN.humidityPct</code></td><td><code>73.50</code></td><td>float, 통상 0.00~100.00%</td><td>보정값이 반영된 상대습도(%)</td></tr>
+    <tr><td><code>sensorN.valid</code></td><td><code>true</code></td><td>Boolean, <code>true</code>/<code>false</code></td><td><code>false</code>이면 해당 온·습도값을 판단이나 기록에 사용하지 말 것</td></tr>
+    <tr><td><code>sensorN.updatedAtTicks</code></td><td><code>820000</code></td><td>uint32, 0~4,294,967,295</td><td>해당 센서의 마지막 정상 갱신 Tick</td></tr>
+    <tr><td><code>loadCell.raw</code></td><td><code>123456</code></td><td>int32, −2,147,483,648~2,147,483,647</td><td>주소 200에서 읽은 로드셀 원시값</td></tr>
+    <tr><td><code>loadCell.weightG</code></td><td><code>8500.00</code></td><td>float, 보정 및 로드셀 용량 범위</td><td>영점·기준추 보정 후 계산한 무게(g)</td></tr>
+    <tr><td><code>loadCell.valid</code></td><td><code>true</code></td><td>Boolean, <code>true</code>/<code>false</code></td><td>로드셀 통신 및 무게값 유효 여부</td></tr>
+    <tr><td><code>fanVelocity.raw</code></td><td><code>1135</code></td><td>정수, 0~4095</td><td>GPIO20에서 측정한 12비트 팬 ADC 원시값</td></tr>
+    <tr><td><code>fanVelocity.constant</code></td><td><code>1135</code></td><td>정수, 1~4095</td><td>설정 메뉴의 팬 10m/s 기준 ADC 값</td></tr>
+    <tr><td><code>fanVelocity.velocity</code></td><td><code>10.00</code></td><td>float, 0 이상(m/s)</td><td><code>raw × 10 ÷ constant</code>로 계산한 풍속</td></tr>
+    <tr><td><code>fanVelocity.valid</code></td><td><code>true</code></td><td>Boolean, <code>true</code>/<code>false</code></td><td>ADC 측정 및 풍속값 유효 여부</td></tr>
+    <tr><td><code>door.rawLevel</code></td><td><code>0</code></td><td>정수, 0 또는 1</td><td>GPIO2 도어센서 원시 입력레벨</td></tr>
+    <tr><td><code>door.open</code></td><td><code>false</code></td><td>Boolean, <code>true</code>/<code>false</code></td><td>도어 열림 여부</td></tr>
+    <tr><td><code>door.valid</code></td><td><code>true</code></td><td>Boolean, <code>true</code>/<code>false</code></td><td>도어센서 초기화 및 상태값 유효 여부</td></tr>
+    <tr><td><code>event.data</code></td><td><code>47104</code></td><td>uint16, 0~65,535</td><td>아래 16개 이벤트 상태를 합친 비트맵 값</td></tr>
+    <tr><td><code>event.doorOpen</code></td><td><code>false</code></td><td>Boolean</td><td>도어 열림 이벤트, bit 0</td></tr>
+    <tr><td><code>event.controlSensorError</code></td><td><code>false</code></td><td>Boolean</td><td>주소 100 제어센서 통신 오류, bit 1</td></tr>
+    <tr><td><code>event.weightSensorError</code></td><td><code>false</code></td><td>Boolean</td><td>주소 200 무게센서 통신 오류, bit 2</td></tr>
+    <tr><td><code>event.thermoState</code></td><td><code>false</code></td><td>Boolean</td><td>제어 온도센서 오류 상태, bit 3</td></tr>
+    <tr><td><code>event.fanMinError</code></td><td><code>false</code></td><td>Boolean</td><td>팬 저속 오류, bit 4</td></tr>
+    <tr><td><code>event.fanMaxError</code></td><td><code>false</code></td><td>Boolean</td><td>팬 과속 오류, bit 5</td></tr>
+    <tr><td><code>event.heater1Error</code></td><td><code>false</code></td><td>Boolean</td><td>히터1 온도 상승 없음, bit 6</td></tr>
+    <tr><td><code>event.heater2Error</code></td><td><code>false</code></td><td>Boolean</td><td>히터2 오류 예약 필드, bit 7</td></tr>
+    <tr><td><code>event.memError</code></td><td><code>false</code></td><td>Boolean</td><td>메모리 오류 예약 필드, bit 8</td></tr>
+    <tr><td><code>event.underHeat</code></td><td><code>false</code></td><td>Boolean</td><td>목표온도 도달시간 초과, bit 9</td></tr>
+    <tr><td><code>event.overHeat</code></td><td><code>false</code></td><td>Boolean</td><td>고온 오류, bit 10</td></tr>
+    <tr><td><code>event.fanRelayOn</code></td><td><code>true</code></td><td>Boolean</td><td>팬 릴레이 실제 기록 상태, bit 11</td></tr>
+    <tr><td><code>event.heaterRelayOn</code></td><td><code>true</code></td><td>Boolean</td><td>히터 릴레이 실제 기록 상태, bit 12</td></tr>
+    <tr><td><code>event.damperRelayOn</code></td><td><code>true</code></td><td>Boolean</td><td>댐퍼 릴레이 실제 기록 상태, bit 13</td></tr>
+    <tr><td><code>event.reserved14</code></td><td><code>false</code></td><td>Boolean</td><td>예약 필드, bit 14</td></tr>
+    <tr><td><code>event.mqttConnect</code></td><td><code>true</code></td><td>Boolean</td><td>MQTT 브로커 연결 상태, bit 15</td></tr>
+    <tr><td><code>remainingTimeMinutes</code></td><td><code>720</code></td><td>int32, 0~1440분</td><td>현재 운전의 남은시간. 화면에 표시되는 남은시간과 같은 분 단위 값</td></tr>
+    <tr><td><code>operatingState</code></td><td><code>2</code></td><td>정수, 0~4</td><td>운전상태 코드: 0=PREPARE, 1=PREHEAT, 2=RUN, 3=COOL, 4=FINISH</td></tr>
+    <tr><td><code>operatingStateName</code></td><td><code>RUN</code></td><td>문자열</td><td>운전상태 코드에 대응하는 영문 상태명</td></tr>
+    <tr><td><code>damperPercent</code></td><td><code>100.0</code></td><td>float, 0.0~100.0%</td><td>댐퍼 개도율. 현재 릴레이 제어에서는 0은 닫힘, 100은 열림</td></tr>
+  </tbody></table>
+
+  <h3>10.6 이벤트 메시지</h3>
+  <p>장비는 1초마다 현재 16비트 이벤트값과 이전 값을 XOR 비교합니다. 하나 이상의 비트가 바뀌면 전체 현재 상태를 <code>dryers/{MAC}/event</code> 토픽으로 즉시 발행합니다. 오류 발생(<code>false→true</code>)뿐 아니라 오류 해제(<code>true→false</code>)와 릴레이 ON/OFF 변화도 전송됩니다.</p>
+  <table><thead><tr><th>전송 조건</th><th>전송 방식</th><th>참고</th></tr></thead><tbody>
+    <tr><td>16개 비트 중 하나 이상 변경</td><td>QoS 1, Retain 사용 안 함</td><td>주기 전송이 아니라 상태 변경 시 전송</td></tr>
+    <tr><td>여러 비트가 같은 1초 주기에서 변경</td><td>현재 전체 상태를 JSON 한 건으로 전송</td><td>변경된 비트만 보내는 형식이 아님</td></tr>
+    <tr><td>MQTT 연결이 끊어진 상태</td><td>발행 생략</td><td>오프라인 이벤트를 별도 저장·재전송하지 않음</td></tr>
+    <tr><td>MQTT 재연결</td><td><code>mqttConnect:true</code> 상태 변경 이벤트 발행</td><td>서버는 재접속 시점으로 활용 가능</td></tr>
+  </tbody></table>
+
+  <h4>완전한 이벤트 JSON 샘플</h4>
+  <p class="small">다음 예제는 팬·히터·댐퍼 릴레이와 MQTT 연결만 ON이고 나머지 오류가 없는 상태입니다. <code>data</code> 47104는 16진수로 <code>0xB800</code>이며 bit 11, 12, 13, 15가 1인 값입니다.</p>
+  <pre>{
+  "data": 47104,
+  "doorOpen": false,
+  "controlSensorError": false,
+  "weightSensorError": false,
+  "thermoState": false,
+  "fanMinError": false,
+  "fanMaxError": false,
+  "heater1Error": false,
+  "heater2Error": false,
+  "memError": false,
+  "underHeat": false,
+  "overHeat": false,
+  "fanRelayOn": true,
+  "heaterRelayOn": true,
+  "damperRelayOn": true,
+  "reserved14": false,
+  "mqttConnect": true
+}</pre>
+
+  <h4>이벤트 필드, 전송값 및 범위</h4>
+  <table><thead><tr><th>비트</th><th>JSON 필드</th><th>전송 예시값</th><th>자료형·범위</th><th>의미</th></tr></thead><tbody>
+    <tr><td>전체</td><td><code>data</code></td><td><code>47104</code></td><td>uint16, 0~65,535</td><td>bit 0~15를 합친 현재 이벤트 비트맵</td></tr>
+    <tr><td>0</td><td><code>doorOpen</code></td><td><code>false</code></td><td>Boolean</td><td>도어 열림. 알림용이며 현재 히터 인터록 조건은 아님</td></tr>
+    <tr><td>1</td><td><code>controlSensorError</code></td><td><code>false</code></td><td>Boolean</td><td>주소 100 통신 5회 연속 실패. 발생 시 건조기 정지</td></tr>
+    <tr><td>2</td><td><code>weightSensorError</code></td><td><code>false</code></td><td>Boolean</td><td>주소 200 통신 5회 연속 실패</td></tr>
+    <tr><td>3</td><td><code>thermoState</code></td><td><code>false</code></td><td>Boolean</td><td>제어 온도센서 오류 상태</td></tr>
+    <tr><td>4</td><td><code>fanMinError</code></td><td><code>false</code></td><td>Boolean</td><td>팬 동작 중 풍속 5.0m/s 미만. 발생 시 건조기 정지</td></tr>
+    <tr><td>5</td><td><code>fanMaxError</code></td><td><code>false</code></td><td>Boolean</td><td>팬 동작 중 풍속 15.0m/s 초과. 발생 시 건조기 정지</td></tr>
+    <tr><td>6</td><td><code>heater1Error</code></td><td><code>false</code></td><td>Boolean</td><td>히터 20분 연속 ON 중 온도 상승 0.5°C 미만</td></tr>
+    <tr><td>7</td><td><code>heater2Error</code></td><td><code>false</code></td><td>Boolean</td><td>히터2 오류 예약 필드</td></tr>
+    <tr><td>8</td><td><code>memError</code></td><td><code>false</code></td><td>Boolean</td><td>메모리 오류 예약 필드</td></tr>
+    <tr><td>9</td><td><code>underHeat</code></td><td><code>false</code></td><td>Boolean</td><td>설정된 시간 안에 목표온도 미도달</td></tr>
+    <tr><td>10</td><td><code>overHeat</code></td><td><code>false</code></td><td>Boolean</td><td>고온 경고값 5초 연속 초과. 발생 시 건조기 정지</td></tr>
+    <tr><td>11</td><td><code>fanRelayOn</code></td><td><code>true</code></td><td>Boolean</td><td>팬 릴레이에 마지막으로 기록한 상태</td></tr>
+    <tr><td>12</td><td><code>heaterRelayOn</code></td><td><code>true</code></td><td>Boolean</td><td>히터 릴레이에 마지막으로 기록한 상태</td></tr>
+    <tr><td>13</td><td><code>damperRelayOn</code></td><td><code>true</code></td><td>Boolean</td><td>댐퍼 릴레이에 마지막으로 기록한 상태</td></tr>
+    <tr><td>14</td><td><code>reserved14</code></td><td><code>false</code></td><td>Boolean</td><td>향후 기능을 위한 예약 필드</td></tr>
+    <tr><td>15</td><td><code>mqttConnect</code></td><td><code>true</code></td><td>Boolean</td><td>현재 MQTT 브로커 연결 상태</td></tr>
+  </tbody></table>
+  <h4><code>data</code> 비트맵 해석 방법</h4>
+  <pre>특정 비트 확인: (data &amp; (1 &lt;&lt; bit번호)) != 0
+
+예: data = 47104 = 0xB800
+fanRelayOn    = (47104 &amp; (1 &lt;&lt; 11)) != 0  // true
+heaterRelayOn = (47104 &amp; (1 &lt;&lt; 12)) != 0  // true
+overHeat      = (47104 &amp; (1 &lt;&lt; 10)) != 0  // false</pre>
+  <div class="note"><b>서버 처리 권장:</b> Boolean 필드를 주 표시값으로 사용하고 <code>data</code>는 원본 비트맵 저장 및 무결성 확인에 사용하십시오. QoS 1 특성상 같은 이벤트가 중복 도착할 수 있으므로 서버 로직은 동일 상태를 여러 번 받아도 안전하게 처리해야 합니다.</div>
+  <div class="warning">이벤트 JSON에는 장비 시간이나 <code>sequence</code>가 포함되지 않습니다. 이벤트 발생시각이 필요하면 MQTT 서버 수신시각을 기록하십시오.</div>
+  <div class="note">현재 펌웨어는 명령 전용 ACK 토픽을 발행하지 않습니다. 유효한 명령을 처리한 직후 발행되는 <code>telemetry</code>에서 변경된 설정값·운전상태·릴레이 상태를 확인하십시오. 관련 이벤트 비트가 변경된 경우에는 <code>event</code>도 별도로 발행됩니다.</div>
+
+  <h3>10.7 연결 문제 확인</h3>
+  <ol class="steps"><li>장비 화면에 MAC이 정상 표시되는지 확인합니다.</li><li>장비와 브로커 사이의 Ethernet 링크, IP, 게이트웨이 및 DNS를 확인합니다.</li><li>PC에서 브로커의 TCP 1883 포트에 접근 가능한지 확인합니다.</li><li>토픽의 MAC에서 콜론을 제거했는지, 대문자 12자리인지 확인합니다.</li><li>JSON 키 이름과 영문 소문자 명령값을 확인합니다.</li><li>MQTT 재연결 후 <code>mqttConnect:true</code> 이벤트 또는 시리얼 로그의 구독 메시지를 확인합니다.</li></ol>
+
+  <h3>10.8 현재시간</h3>
+  <p>현재시간은 MQTT 서버에서 받지 않습니다. 네트워크 연결 후 NTP <code>pool.ntp.org</code>에서 동기화하며 한국 표준시(KST, UTC+9)를 표시합니다. MQTT가 정상이어도 인터넷 DNS 또는 NTP가 차단되면 시간이 표시되지 않을 수 있습니다.</p>
+</section>
+
+<section id="service">
+  <h2>11. 유지보수 참고</h2>
+  <table><thead><tr><th>기능</th><th>GPIO/통신</th></tr></thead><tbody><tr><td>부저</td><td>GPIO1</td></tr><tr><td>도어센서</td><td>GPIO2</td></tr><tr><td>히터 릴레이</td><td>GPIO3</td></tr><tr><td>팬 릴레이</td><td>GPIO5</td></tr><tr><td>팬 전류 ADC</td><td>GPIO20</td></tr><tr><td>댐퍼 릴레이</td><td>GPIO47</td></tr><tr><td>RS485</td><td>UART1, TX GPIO26, RX GPIO27, 4800bps</td></tr></tbody></table>
+  <ul><li>팬·히터·댐퍼 출력은 통신 상태와 관계없이 1초마다 다시 기록됩니다.</li><li>설정값, 보정값, 장비명과 운전 상태는 NVS에 저장됩니다.</li><li>팬 전류는 16회 샘플 평균이며 기본 변환은 1000mV/A입니다.</li></ul>
+</section>
+
+<section id="trouble">
+  <h2>12. 문제 해결</h2>
+  <table><thead><tr><th>증상</th><th>확인 사항</th></tr></thead><tbody>
+    <tr><td>온·습도 값이 표시되지 않음</td><td>센서 전원, 주소 100~106 중복 여부, A/B 극성, 4800bps 설정을 확인합니다.</td></tr>
+    <tr><td>팬은 도는데 풍속이 비정상</td><td>GPIO20 배선과 ADC 원시값을 확인하고 팬 10m/s 기준 ADC를 현장 측정값으로 보정합니다.</td></tr>
+    <tr><td>자동 댐퍼가 자주 움직임</td><td>댐퍼 제어 히스테리시스를 늘리거나 습도센서 보정을 확인합니다.</td></tr>
+    <tr><td>히터가 너무 자주 ON/OFF</td><td>온도 제어 히스테리시스를 늘립니다. 지나치게 큰 값은 온도 편차를 키울 수 있습니다.</td></tr>
+    <tr><td>이미지 전송 FAILED</td><td>서버가 0.0.0.0:설정포트에서 실행 중인지, PC 방화벽과 IP 설정이 맞는지 확인합니다.</td></tr>
+    <tr><td>MQTT가 연결되지 않음</td><td>유선 네트워크, 게이트웨이, 브로커 <code>182.208.84.190:1883</code> 접근 여부를 확인합니다.</td></tr>
+    <tr><td>시간이 맞지 않음</td><td>인터넷 연결과 DNS, NTP 접근 가능 여부를 확인합니다.</td></tr>
+  </tbody></table>
+</section>
+</main>
+</div>
+<footer>DY-EP4 사용설명서 · 본 문서는 현재 펌웨어 소스 구현을 기준으로 자동 작성되었습니다. 하드웨어 개조 또는 펌웨어 변경 후에는 설명서를 함께 갱신하십시오.</footer>
+</body>
+</html>

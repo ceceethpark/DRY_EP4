@@ -7,6 +7,7 @@
 #include "ycb_7seg.h"
 #include "ycb_hangul.h"
 #include "esp_mac.h"
+#include "esp_netif.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
@@ -214,6 +215,11 @@ static lv_color_t *s_dryer_set_title_buf;
 static lv_color_t *s_dryer_set_btn_buf[7];
 static lv_color_t *s_dryer_set_unit_buf[4];
 static lv_color_t *s_main_set_temp_title_buf[3];
+static lv_color_t *s_error_title_buf;
+static lv_color_t *s_error_line1_buf;
+static lv_color_t *s_error_line2_buf;
+static lv_color_t *s_error_ok_buf;
+static lv_color_t *s_equipment_name_buf;
 static lv_color_t *allocCanvasBuffer(size_t pixels)
 {
     return static_cast<lv_color_t*>(heap_caps_calloc(pixels,sizeof(lv_color_t),MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT));
@@ -419,7 +425,7 @@ static const char *stateStr(DryState s) {
  * ═══════════════════════════════════════════════════════════════════════════ */
 DryerApp::DryerApp()
     : _scr_main(nullptr), _scr_proc(nullptr), _scr_cal(nullptr), _scr_weight_cal(nullptr),
-      _scr_cooling(nullptr),
+      _scr_cooling(nullptr), _error_popup_overlay(nullptr),
       _lbl_hdr_dry_temp(nullptr), _lbl_hdr_humidity(nullptr), _lbl_hdr_set_temp(nullptr),
       _lbl_pre_disp(nullptr), _lbl_rem_disp(nullptr),
       _canvas_pre_remain(nullptr), _canvas_rem_time(nullptr),
@@ -438,6 +444,7 @@ DryerApp::DryerApp()
       _dot_heater(nullptr), _fan_ring(nullptr), _dot_fan(nullptr), _dot_damper(nullptr), _door_icon(nullptr),
       _lbl_heater_status(nullptr), _lbl_door_status(nullptr),
       _lbl_server_time(nullptr), _lbl_device_id(nullptr),
+      _lbl_device_ip(nullptr),
       _btn_set(nullptr), _lbl_cal_sensor(nullptr), _lbl_cal_temp(nullptr), _lbl_cal_hum(nullptr),
       _lbl_weight_raw(nullptr), _lbl_weight_live(nullptr), _lbl_weight_reference(nullptr),
       _btn_weight_ref_dn(nullptr), _btn_weight_ref_up(nullptr),
@@ -457,9 +464,12 @@ DryerApp::DryerApp()
       _colon_blink(false), _time_canvas_state_valid(false),
       _time_canvas_last_pre_remain(-1), _time_canvas_last_remaining(-1),
       _time_canvas_last_state(DRY_FINISH),
-      _door_open(false), _blower_speed_ms(0.0f), _damper_percent(0.0f), _equipment_name{"DY-EP4"}, _cal_sensor(0), _cal_item(0),
+      _door_open(false), _blower_speed_ms(0.0f), _damper_percent(0.0f), _equipment_name{"DY-EP4"}, _equipment_id(0), _cal_sensor(0), _cal_item(0),
       _weight_g(0.0f), _weight_reference_g(1000), _weight_cal_backup{},
-      _tick_s(0), _mqtt_publish_elapsed_s(0), _demo_tick(0),
+      _tick_s(0), _mqtt_publish_elapsed_s(0), _over_heat_seconds(0),
+      _target_reach_elapsed_seconds(0), _target_temperature_reached(false),
+      _heater_continuous_on_seconds(0), _heater_on_start_temperature(0.0F),
+      _heater_on_start_temperature_valid(false), _demo_tick(0),
       _hist_cnt(0), _tick5min(0),
       _timer(nullptr), _fan_spin_timer(nullptr), _fan_spin_angle(30),
       _fan_spin_epoch_ms(0), _periodic_ui_refresh_phase(0)
@@ -947,14 +957,9 @@ void DryerApp::buildMainScreen(void)
     lv_obj_t*preDivider=lv_obj_create(preheat);lv_obj_set_pos(preDivider,116,8);lv_obj_set_size(preDivider,2,100);lv_obj_set_style_bg_color(preDivider,C_WHITE,0);lv_obj_set_style_bg_opa(preDivider,LV_OPA_30,0);lv_obj_set_style_border_width(preDivider,0,0);lv_obj_set_style_pad_all(preDivider,0,0);lv_obj_clear_flag(preDivider,LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_CLICKABLE);
     lv_obj_t*preRemain=tile(538,240,234,116,green);label(preRemain,"PREHEAT REMAINING",12,9,&lv_font_montserrat_14,C_WHITE);_canvas_pre_remain=lv_canvas_create(preRemain);lv_canvas_set_buffer(_canvas_pre_remain,s_pre_remain_7seg_buf,TIME_7SEG_W,TIME_7SEG_H,LV_IMG_CF_TRUE_COLOR);lv_obj_set_pos(_canvas_pre_remain,7,39);_lbl_pre_disp=nullptr;
     kor(preRemain,"남은예열시간",12,5,190,26,C_WHITE,green,1,false);
-    lv_obj_t*messenger=tile(300,360,472,116,dark);label(messenger,"MESSENGER",12,8,&lv_font_montserrat_14,C_CYAN);_lbl_messenger=label(messenger,"Waiting for server control...",12,32,&lv_font_montserrat_14,C_WHITE);lv_obj_set_width(_lbl_messenger,448);lv_label_set_long_mode(_lbl_messenger,LV_LABEL_LONG_CLIP);
-    kor(messenger,"메시지",12,5,100,26,C_CYAN,dark,1,false);
+    lv_obj_t*messenger=tile(300,360,472,116,dark);_lbl_messenger=label(messenger,"Waiting for server control...",12,5,&lv_font_montserrat_12,C_WHITE);lv_obj_set_size(_lbl_messenger,448,106);lv_label_set_long_mode(_lbl_messenger,LV_LABEL_LONG_WRAP);lv_label_set_recolor(_lbl_messenger,true);lv_obj_set_style_text_line_space(_lbl_messenger,1,0);
     _lbl_dry_time_val=nullptr;_lbl_dry_temp_val=_lbl_hdr_set_temp;
-    lv_obj_t*device=tile(0,480,296,120,navy);label(device,"DRYER NAME / MAC",12,9,&lv_font_montserrat_12,C_CYAN);_lbl_equipment_name=label(device,_equipment_name,12,35,&lv_font_montserrat_20,C_WHITE);uint8_t mac[6]={};esp_read_mac(mac,ESP_MAC_ETH);char mac_text[24];snprintf(mac_text,sizeof(mac_text),"%02X:%02X:%02X:%02X:%02X:%02X",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);_lbl_device_id=label(device,mac_text,12,76,&lv_font_montserrat_16,C_WHITE);lv_obj_add_flag(device,LV_OBJ_FLAG_CLICKABLE);lv_obj_add_event_cb(device,cbOpenCoolingSettings,LV_EVENT_LONG_PRESSED,this);
-    kor(device,"건조기 이름 / 맥",12,5,180,26,C_CYAN,navy,1,false);
-    /* Keep only the dryer name and MAC value; remove both title layers. */
-    lv_obj_add_flag(lv_obj_get_child(device, 0), LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_flag(lv_obj_get_child(device, 3), LV_OBJ_FLAG_HIDDEN);
+    lv_obj_t*device=tile(0,480,296,120,navy);if(!s_equipment_name_buf)s_equipment_name_buf=allocCanvasBuffer(296*40);_lbl_equipment_name=lv_canvas_create(device);lv_canvas_set_buffer(_lbl_equipment_name,s_equipment_name_buf,296,40,LV_IMG_CF_TRUE_COLOR);lv_canvas_fill_bg(_lbl_equipment_name,navy,LV_OPA_COVER);int equipment_name_scale=ycb_hangul_measure(_equipment_name,2)<=296?2:1;int equipment_name_width=ycb_hangul_measure(_equipment_name,equipment_name_scale);int equipment_name_x=(296-equipment_name_width)/2;if(equipment_name_x<0)equipment_name_x=0;int equipment_name_y=(40-16*equipment_name_scale)/2;ycb_hangul_draw(_lbl_equipment_name,equipment_name_x,equipment_name_y,C_WHITE,navy,_equipment_name,equipment_name_scale,false);lv_obj_set_pos(_lbl_equipment_name,0,2);lv_obj_clear_flag(_lbl_equipment_name,LV_OBJ_FLAG_CLICKABLE|LV_OBJ_FLAG_SCROLLABLE);char id_text[20];if(_equipment_id>=EQUIPMENT_ID_MIN)snprintf(id_text,sizeof(id_text),"%06ld",static_cast<long>(_equipment_id));else snprintf(id_text,sizeof(id_text),"------");_lbl_device_id=label(device,id_text,10,52,&lv_font_montserrat_14,C_WHITE);uint8_t device_mac[6]{};char mac_text[24]="--:--:--:--:--:--";if(esp_efuse_mac_get_default(device_mac)==ESP_OK)snprintf(mac_text,sizeof(mac_text),"%02X:%02X:%02X:%02X:%02X:%02X",device_mac[0],device_mac[1],device_mac[2],device_mac[3],device_mac[4],device_mac[5]);_lbl_device_ip=label(device,"IP: ---.---.---.---",10,88,&lv_font_montserrat_14,C_WHITE);lv_obj_t*mac_label=label(device,mac_text,140,89,&lv_font_montserrat_12,C_YELLOW);lv_obj_set_width(mac_label,136);lv_obj_set_style_text_align(mac_label,LV_TEXT_ALIGN_RIGHT,0);lv_obj_add_flag(device,LV_OBJ_FLAG_CLICKABLE);lv_obj_add_event_cb(device,cbOpenCoolingSettings,LV_EVENT_LONG_PRESSED,this);
     lv_obj_t*icons=tile(300,480,472,120,C_PANEL);
     auto icon_text=[&](const char*t,int x,int y,lv_color_t c){lv_obj_t*l=label(icons,t,x,y,&lv_font_montserrat_14,c);lv_obj_set_width(l,118);lv_obj_set_style_text_align(l,LV_TEXT_ALIGN_CENTER,0);return l;};
     icon_text("HEATER",0,79,C_WHITE);_lbl_heater_status=icon_text("OFF",0,99,C_GRAY);
@@ -1210,6 +1215,7 @@ void DryerApp::restoreRuntimeState(void)
 bool DryerApp::init(void)
 {
     s_nvs.loadEquipmentName(_equipment_name, sizeof(_equipment_name));
+    s_nvs.loadEquipmentId(&_equipment_id);
     _vision.setUploadHandler(uploadVisionFrame, this);
     memset(_temp_cal,0,sizeof(_temp_cal));memset(_hum_cal,0,sizeof(_hum_cal));memset(_temp_cal_backup,0,sizeof(_temp_cal_backup));memset(_hum_cal_backup,0,sizeof(_hum_cal_backup));memset(_cal_cells,0,sizeof(_cal_cells));
     DryerNvsCalibration calibration{};
@@ -1317,7 +1323,7 @@ esp_err_t DryerApp::uploadVisionFrame(const void *rgb565, size_t size,
 
     const esp_http_client_config_t httpCfg{
         .url=url,
-        .timeout_ms=15000,
+        .timeout_ms=IMAGE_UPLOAD_HTTP_TIMEOUT_MS,
         .buffer_size=1024,
         .buffer_size_tx=4096,
     };
@@ -1427,7 +1433,9 @@ void DryerApp::updateMachineInputs(bool door_open, float blower_speed_ms,
     g_dryer_sensor_values.door.open = _door_open;
     g_dryer_sensor_values.door.raw_level = _door_open ? 1 : 0;
     g_dryer_sensor_values.door.valid = true;
-    g_dryer_sensor_values.blower_speed_ms = _blower_speed_ms;
+    g_dryer_sensor_values.fan_velocity.velocity_ms = _blower_speed_ms;
+    g_dryer_sensor_values.fan_velocity.reference_adc = _dryer_settings.fan_adc_at_10ms;
+    g_dryer_sensor_values.fan_velocity.valid = true;
     g_dryer_sensor_values.load_cell.weight_g = _weight_g;
     g_dryer_sensor_values.load_cell.updated_at = xTaskGetTickCount();
     g_dryer_sensor_values.load_cell.valid = true;
@@ -1527,7 +1535,7 @@ void DryerApp::refreshCards(void)
 {
     char buf[32];
     if (_lbl_messenger) {
-        char history[3 * 96 + 3] = {};
+        char history[6 * 96 + 32] = {};
         if (_mqtt.getControlHistory(history, sizeof(history)))
             setLabelTextIfChanged(_lbl_messenger, history);
     }
@@ -1599,6 +1607,8 @@ void DryerApp::refreshCards(void)
         else
             snprintf(buf, sizeof(buf), "%.0f g", _weight_g);
         setLabelTextIfChanged(_lbl_weight, buf);
+        lv_obj_set_style_text_color(_lbl_weight,
+            g_alarm_info.weight_sensor_error ? lv_color_hex(0x46505A) : C_WHITE,0);
     }
     if (_lbl_door) lv_label_set_text(_lbl_door, _door_open ? "OPEN" : "CLOSED");
     if (_lbl_fan_rate) {
@@ -1638,7 +1648,8 @@ void DryerApp::refreshFooter(void)
 
     /* Redraw footer canvases only when their displayed value changes. */
     if (heater_changed)
-        drawHeaterIcon(_dot_heater, _heater_on ? C_RED : C_GRAY, C_PANEL);
+        drawHeaterIcon(_dot_heater, g_alarm_info.under_heat ? C_BLUE :
+                       (_heater_on ? C_RED : C_GRAY), C_PANEL);
     /* Redraw only on state changes; redrawing every second causes a rotation hitch. */
     if (!_fan_icon_state_valid || _fan_icon_last_on != _fan_on) {
         if (_fan_on && (!_fan_icon_state_valid || !_fan_icon_last_on))
@@ -1662,7 +1673,8 @@ void DryerApp::refreshFooter(void)
     if (_lbl_heater_status && heater_changed) {
         lv_label_set_text(_lbl_heater_status, _heater_on ? "ON" : "OFF");
         lv_obj_set_style_text_color(_lbl_heater_status,
-                                    _heater_on ? C_RED : C_GRAY, 0);
+                                    g_alarm_info.under_heat ? C_BLUE :
+                                    (_heater_on ? C_RED : C_GRAY), 0);
     }
     if (_lbl_door_status && door_changed) {
         lv_label_set_text(_lbl_door_status,
@@ -1674,6 +1686,16 @@ void DryerApp::refreshFooter(void)
     _door_icon_last_open = _door_open;
     _damper_icon_last_percent = _damper_percent;
     _footer_icon_state_valid = true;
+    if (_lbl_device_ip) {
+        char ipText[24] = "IP: ---.---.---.---";
+        esp_netif_t *ethNetif = esp_netif_get_handle_from_ifkey("ETH_DEF");
+        esp_netif_ip_info_t ipInfo{};
+        if (ethNetif && esp_netif_get_ip_info(ethNetif, &ipInfo) == ESP_OK &&
+            ipInfo.ip.addr != 0) {
+            snprintf(ipText, sizeof(ipText), "IP: " IPSTR, IP2STR(&ipInfo.ip));
+        }
+        setLabelTextIfChanged(_lbl_device_ip, ipText);
+    }
     if (_lbl_server_time) {
         const time_t now = time(nullptr);
         struct tm localTime {};
@@ -1820,11 +1842,11 @@ void DryerApp::cbTimer(lv_timer_t *t)
     DryerApp *self = (DryerApp *)t->user_data;
     static unsigned heartbeat = 0;
     if ((++heartbeat % 5U) == 0U) {
-        printf("DY-EP4 heartbeat: UI running, MQTT=%s, FAN ADC=%d (%d mV, %.3f A)\n",
+        printf("DY-EP4 heartbeat: UI running, MQTT=%s, FAN ADC=%d (constant=%d, %.2f m/s)\n",
                self->_mqtt.isConnected() ? "connected" : "waiting-network",
-               static_cast<int>(g_dryer_sensor_values.fan_current.raw),
-               static_cast<int>(g_dryer_sensor_values.fan_current.millivolts),
-               static_cast<double>(g_dryer_sensor_values.fan_current.amperes));
+               static_cast<int>(g_dryer_sensor_values.fan_velocity.raw),
+               static_cast<int>(g_dryer_sensor_values.fan_velocity.reference_adc),
+               static_cast<double>(g_dryer_sensor_values.fan_velocity.velocity_ms));
     }
 
     /* ── Colon blink ── */
@@ -1833,7 +1855,7 @@ void DryerApp::cbTimer(lv_timer_t *t)
     /* 1. Read every sensor first, regardless of communication state. */
     self->updateSensorValues();
     self->errorCheck();
-    self->processMqttCommands();
+    const bool mqtt_command_processed = self->processMqttCommands();
 
     /* 2. Evaluate the operating state using the latest sensor snapshot. */
     if (self->_dry_state == DRY_PREHEAT) {
@@ -1841,14 +1863,21 @@ void DryerApp::cbTimer(lv_timer_t *t)
             const float diff = static_cast<float>(self->_pre_temp) - self->_cur_temp;
             self->_cur_temp += diff * 0.06F;
         }
-        self->_heater_on = (self->_cur_temp < (float)self->_pre_temp - 0.5f);
+        const float target = static_cast<float>(self->_pre_temp);
+        const float on_threshold = target -
+            static_cast<float>(self->_dryer_settings.temp_hysteresis_c);
+        if (self->_cur_temp <= on_threshold) self->_heater_on = true;
+        else if (self->_cur_temp >= target) self->_heater_on = false;
     } else if (self->_dry_state == DRY_RUN) {
         if (self->_rs485_sensors == nullptr) {
             const float diff = self->_set_temp - self->_cur_temp;
             self->_cur_temp += diff * 0.04F;
             if (self->_humidity > 12.0F) self->_humidity -= 0.15F;
         }
-        self->_heater_on = (self->_cur_temp < self->_set_temp - (float)self->_dryer_settings.temp_hysteresis_c);
+        const float on_threshold = self->_set_temp -
+            static_cast<float>(self->_dryer_settings.temp_hysteresis_c);
+        if (self->_cur_temp <= on_threshold) self->_heater_on = true;
+        else if (self->_cur_temp >= self->_set_temp) self->_heater_on = false;
     } else if (self->_dry_state == DRY_COOL) {
         if (self->_rs485_sensors == nullptr &&
             self->_cur_temp > static_cast<float>(self->_dryer_settings.cooling_temp_c)) {
@@ -1857,6 +1886,22 @@ void DryerApp::cbTimer(lv_timer_t *t)
         self->_heater_on = false;
     } else {
         self->_heater_on = false;
+    }
+
+    /* Automatic damper control with hysteresis:
+       open at the configured humidity, close only after humidity falls by
+       the configured hysteresis. Between both thresholds retain its state. */
+    if (self->_damper_mode == DAMPER_AUTO &&
+        g_dryer_sensor_values.temperature_humidity[0].valid) {
+        const float open_threshold = static_cast<float>(
+            self->_dryer_settings.damper_open_humidity_pct);
+        float close_threshold = open_threshold - static_cast<float>(
+            self->_dryer_settings.damper_hysteresis_pct);
+        if (close_threshold < 0.0F) close_threshold = 0.0F;
+        const float humidity =
+            g_dryer_sensor_values.temperature_humidity[0].humidity_pct;
+        if (humidity >= open_threshold) self->_damper_percent = 100.0F;
+        else if (humidity <= close_threshold) self->_damper_percent = 0.0F;
     }
 
     /* ── Countdown ──────────────────────────────────────────────── */
@@ -1902,10 +1947,26 @@ void DryerApp::cbTimer(lv_timer_t *t)
     self->applyActuatorSafetyChecks();
     self->writeActuatorOutputs();
 
-    /* 4. Publish one coherent, freshly updated sensor snapshot at the saved interval. */
+    /* Commands and countdown can change these after the sensor read above. */
+    g_dryer_sensor_values.remaining_time_min = self->_remaining_min;
+    g_dryer_sensor_values.operating_state = self->_dry_state;
+    g_dryer_sensor_values.damper_percent = self->_damper_percent;
+
+    /* 4. A valid server command always gets a post-control telemetry response.
+       This immediate response does not disturb the configured periodic schedule. */
     const uint32_t telemetry_period_s = static_cast<uint32_t>(
         self->_dryer_settings.mqtt_publish_interval_min) * 60U;
-    if (++self->_mqtt_publish_elapsed_s >= telemetry_period_s) {
+    const bool periodic_telemetry_due =
+        ++self->_mqtt_publish_elapsed_s >= telemetry_period_s;
+    bool command_telemetry_published = false;
+    if (mqtt_command_processed) {
+        command_telemetry_published =
+            self->_mqtt.publishTelemetry(g_dryer_sensor_values);
+        /* Avoid a duplicate only when the normal interval is due in this same loop. */
+        if (command_telemetry_published && periodic_telemetry_due)
+            self->_mqtt_publish_elapsed_s = 0;
+    }
+    if (periodic_telemetry_due && !command_telemetry_published) {
         if (self->_mqtt.publishTelemetry(g_dryer_sensor_values))
             self->_mqtt_publish_elapsed_s = 0;
         else if (self->_mqtt_publish_elapsed_s > telemetry_period_s)
@@ -2123,6 +2184,8 @@ void DryerApp::updateSensorValues(void)
 
         if (_load_cell != nullptr) {
             values.load_cell = _load_cell->reading();
+            if (_rs485_sensors->loadCellFailureCount() >= SENSOR_COMM_FAILURE_LIMIT)
+                values.load_cell.valid = false;
             if (_cur_scr == SCR_WEIGHT_CALIBRATION) refreshWeightCalibration();
         } else {
             values.load_cell.valid = false;
@@ -2143,18 +2206,26 @@ void DryerApp::updateSensorValues(void)
     }
 
     FanCurrentSensorValue fan_current{};
-    if (s_fan.read(fan_current) == ESP_OK) values.fan_current = fan_current;
-    else values.fan_current.valid = false;
+    if (s_fan.read(fan_current) == ESP_OK) {
+        values.fan_velocity.raw = fan_current.raw;
+        values.fan_velocity.reference_adc = _dryer_settings.fan_adc_at_10ms;
+        values.fan_velocity.velocity_ms =
+            static_cast<float>(fan_current.raw) * 10.0F /
+            static_cast<float>(_dryer_settings.fan_adc_at_10ms);
+        values.fan_velocity.valid = fan_current.valid;
+    } else {
+        values.fan_velocity.valid = false;
+        values.fan_velocity.velocity_ms = 0.0F;
+    }
 
     values.door.raw_level = _door_sensor.initialized() ? _door_sensor.rawLevel() : 0;
     values.door.open = values.door.raw_level != 0;
     values.door.valid = _door_sensor.initialized();
 
-    _blower_speed_ms = values.fan_current.valid
-        ? (static_cast<float>(values.fan_current.raw) * 10.0F /
-           static_cast<float>(_dryer_settings.fan_adc_at_10ms))
-        : 0.0F;
-    values.blower_speed_ms = _blower_speed_ms;
+    _blower_speed_ms = values.fan_velocity.valid
+        ? values.fan_velocity.velocity_ms : 0.0F;
+    values.remaining_time_min = _remaining_min;
+    values.operating_state = _dry_state;
     values.damper_percent = _damper_percent;
     values.updated_at = now;
     ++values.sequence;
@@ -2183,18 +2254,67 @@ void DryerApp::errorCheck(void)
 
     current.door_open = values.door.valid && values.door.open;
 
-    bool any_temperature_sensor_invalid = false;
-    for (size_t i = 0; i < DRYER_SENSOR_COUNT; ++i) {
-        if (!values.temperature_humidity[i].valid) {
-            any_temperature_sensor_invalid = true;
-            break;
-        }
+    current.control_sensor_error = _rs485_sensors != nullptr &&
+        _rs485_sensors->controlFailureCount() >= SENSOR_COMM_FAILURE_LIMIT;
+    current.weight_sensor_error = _rs485_sensors != nullptr &&
+        _rs485_sensors->loadCellFailureCount() >= SENSOR_COMM_FAILURE_LIMIT;
+
+    const bool fan_running = _fan_on;
+    current.fan_min_error = fan_running && values.fan_velocity.valid &&
+        values.fan_velocity.velocity_ms < FAN_SPEED_MIN_MPS;
+    current.fan_max_error = fan_running && values.fan_velocity.valid &&
+        values.fan_velocity.velocity_ms > FAN_SPEED_MAX_MPS;
+
+    const bool heating_state = _dry_state == DRY_PREHEAT || _dry_state == DRY_RUN;
+    const bool control_temperature_valid = values.temperature_humidity[0].valid;
+    const float control_temperature = values.temperature_humidity[0].temperature_c;
+    const float target_temperature = _dry_state == DRY_PREHEAT
+        ? static_cast<float>(_pre_temp) : _set_temp;
+
+    if (!heating_state) {
+        _target_reach_elapsed_seconds = 0;
+        _target_temperature_reached = false;
+        current.under_heat = 0;
+    } else {
+        if (control_temperature_valid && control_temperature >= target_temperature)
+            _target_temperature_reached = true;
+        if (!_target_temperature_reached && _target_reach_elapsed_seconds < UINT32_MAX)
+            ++_target_reach_elapsed_seconds;
+        const uint32_t reach_limit_seconds =
+            static_cast<uint32_t>(_dryer_settings.low_warning_reach_time_min) * 60U;
+        current.under_heat = !_target_temperature_reached &&
+            _target_reach_elapsed_seconds >= reach_limit_seconds;
     }
-    current.thermist_open = any_temperature_sensor_invalid;
-    current.thermo_state = !values.temperature_humidity[0].valid;
-    current.over_heat = values.temperature_humidity[0].valid &&
-        values.temperature_humidity[0].temperature_c >=
+
+    const bool heater_relay_on = g_alarm_info.heater_relay_on != 0;
+    if (!heater_relay_on || !control_temperature_valid) {
+        _heater_continuous_on_seconds = 0;
+        _heater_on_start_temperature_valid = false;
+        current.heater1_error = 0;
+    } else {
+        if (!_heater_on_start_temperature_valid) {
+            _heater_on_start_temperature = control_temperature;
+            _heater_on_start_temperature_valid = true;
+            _heater_continuous_on_seconds = 0;
+        }
+        if (_heater_continuous_on_seconds < UINT32_MAX)
+            ++_heater_continuous_on_seconds;
+        current.heater1_error =
+            _heater_continuous_on_seconds >= HEATER_NO_RISE_CONFIRM_SECONDS &&
+            control_temperature <
+                _heater_on_start_temperature + HEATER_MIN_DETECTABLE_RISE_C;
+    }
+
+    const bool above_high_limit = control_temperature_valid &&
+        control_temperature >
             static_cast<float>(_dryer_settings.high_warning_temp_c);
+    if (above_high_limit) {
+        if (_over_heat_seconds < OVER_HEAT_CONFIRM_SECONDS) ++_over_heat_seconds;
+    } else {
+        _over_heat_seconds = 0;
+    }
+    current.over_heat = _over_heat_seconds >= OVER_HEAT_CONFIRM_SECONDS;
+    current.thermo_state = current.control_sensor_error;
     current.mqtt_connect = _mqtt.isConnected() ? 1U : 0U;
 
     g_alarm_info = current;
@@ -2211,27 +2331,25 @@ void DryerApp::errorCheck(void)
     _previous_event_info = current;
 }
 
-void DryerApp::processMqttCommands(void)
+bool DryerApp::processMqttCommands(void)
 {
     MqttCommand command{};
     bool processed = false;
     while (_mqtt.popCommand(command)) {
-        processed = true;
+        bool commandApplied = false;
         switch (command.type) {
         case MqttCommandType::SetTemperature:
             if (command.value >= DRYER_CFG_TEMP_MIN_C && command.value <= DRYER_CFG_TEMP_MAX_C) {
-                _dryer_settings.dry_temp_c = command.value;
                 _set_temp = static_cast<float>(command.value);
-                s_nvs.saveCoolingSettings(_dryer_settings);
                 saveRuntimeState();
+                commandApplied = true;
             }
             break;
         case MqttCommandType::SetTime:
             if (command.value >= DRYER_CFG_TIME_MIN_MIN && command.value <= DRYER_CFG_TIME_MIN_MAX) {
-                _dryer_settings.dry_time_min = command.value;
-                _dry_time_min = command.value;
-                s_nvs.saveCoolingSettings(_dryer_settings);
+                _remaining_min = command.value;
                 saveRuntimeState();
+                commandApplied = true;
             }
             break;
         case MqttCommandType::PreheatStart:
@@ -2243,6 +2361,7 @@ void DryerApp::processMqttCommands(void)
                 _damper_percent = command.damperMode == 1 ? 100.0F :
                                    command.damperMode == 2 ? 0.0F : _damper_percent;
                 if (_dry_state != DRY_PREHEAT) doPreheatStart();
+                commandApplied = true;
             }
             break;
         case MqttCommandType::DryStart:
@@ -2259,6 +2378,7 @@ void DryerApp::processMqttCommands(void)
                 s_nvs.saveCoolingSettings(_dryer_settings);
                 _dry_state = DRY_FINISH;
                 doStartStop();
+                commandApplied = true;
             }
             break;
         case MqttCommandType::DryStop:
@@ -2268,14 +2388,31 @@ void DryerApp::processMqttCommands(void)
                 _damper_percent = command.damperMode == 1 ? 100.0F :
                                    command.damperMode == 2 ? 0.0F : _damper_percent;
             }
+            commandApplied = true;
             break;
-        case MqttCommandType::DamperAuto:  _damper_mode = DAMPER_AUTO; break;
-        case MqttCommandType::DamperOpen:  _damper_mode = DAMPER_OPEN; _damper_percent = 100.0F; break;
-        case MqttCommandType::DamperClose: _damper_mode = DAMPER_CLOSE; _damper_percent = 0.0F; break;
+        case MqttCommandType::DamperAuto:  _damper_mode = DAMPER_AUTO; commandApplied = true; break;
+        case MqttCommandType::DamperOpen:  _damper_mode = DAMPER_OPEN; _damper_percent = 100.0F; commandApplied = true; break;
+        case MqttCommandType::DamperClose: _damper_mode = DAMPER_CLOSE; _damper_percent = 0.0F; commandApplied = true; break;
         case MqttCommandType::SetEquipmentName:
             snprintf(_equipment_name, sizeof(_equipment_name), "%s", command.text);
-            s_nvs.saveEquipmentName(_equipment_name);
-            if (_lbl_equipment_name) lv_label_set_text(_lbl_equipment_name, _equipment_name);
+            _equipment_id = command.equipmentId;
+            s_nvs.saveEquipmentInfo(_equipment_name, _equipment_id);
+            if (_lbl_equipment_name) {
+                lv_canvas_fill_bg(_lbl_equipment_name,lv_color_hex(0x12324A),LV_OPA_COVER);
+                const int nameScale=ycb_hangul_measure(_equipment_name,2)<=296?2:1;
+                const int nameWidth=ycb_hangul_measure(_equipment_name,nameScale);
+                int nameX=(296-nameWidth)/2;
+                if(nameX<0)nameX=0;
+                const int nameY=(40-16*nameScale)/2;
+                ycb_hangul_draw(_lbl_equipment_name,nameX,nameY,C_WHITE,
+                                lv_color_hex(0x12324A),_equipment_name,nameScale,false);
+            }
+            if (_lbl_device_id) {
+                char idText[20];
+                snprintf(idText,sizeof(idText),"%06ld",static_cast<long>(_equipment_id));
+                lv_label_set_text(_lbl_device_id,idText);
+            }
+            commandApplied = true;
             break;
         default: break;
         }
@@ -2285,23 +2422,123 @@ void DryerApp::processMqttCommands(void)
             _dryer_settings.damper_mode = static_cast<int32_t>(_damper_mode);
             s_nvs.saveCoolingSettings(_dryer_settings);
         }
+        if (commandApplied) {
+            processed = true;
+            _mqtt.recordCommandHistory(command);
+        }
     }
     if (processed) {
         refreshHeader();
         refreshCards();
         refreshFooter();
     }
+    return processed;
+}
+
+void DryerApp::showErrorPopup(const char *title, const char *line1, const char *line2)
+{
+    constexpr int canvas_width = 560;
+    if (_error_popup_overlay) lv_obj_del(_error_popup_overlay);
+    _error_popup_overlay = lv_obj_create(lv_layer_top());
+    lv_obj_set_pos(_error_popup_overlay,0,0);
+    lv_obj_set_size(_error_popup_overlay,1024,600);
+    lv_obj_set_style_bg_color(_error_popup_overlay,lv_color_black(),0);
+    lv_obj_set_style_bg_opa(_error_popup_overlay,LV_OPA_60,0);
+    lv_obj_set_style_border_width(_error_popup_overlay,0,0);
+    lv_obj_set_style_pad_all(_error_popup_overlay,0,0);
+    lv_obj_clear_flag(_error_popup_overlay,LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t *box = lv_obj_create(_error_popup_overlay);
+    lv_obj_set_size(box,640,330); lv_obj_center(box);
+    lv_obj_set_style_bg_color(box,C_PANEL,0);
+    lv_obj_set_style_bg_opa(box,LV_OPA_COVER,0);
+    lv_obj_set_style_border_color(box,C_RED,0);
+    lv_obj_set_style_border_width(box,5,0);
+    lv_obj_set_style_radius(box,10,0);
+    lv_obj_clear_flag(box,LV_OBJ_FLAG_SCROLLABLE);
+
+    if(!s_error_title_buf)s_error_title_buf=allocCanvasBuffer(canvas_width*52);
+    if(!s_error_line1_buf)s_error_line1_buf=allocCanvasBuffer(canvas_width*42);
+    if(!s_error_line2_buf)s_error_line2_buf=allocCanvasBuffer(canvas_width*42);
+    if(!s_error_ok_buf)s_error_ok_buf=allocCanvasBuffer(150*50);
+    auto drawLine=[&](lv_color_t *buffer,int height,const char *text,int y,
+                      lv_color_t color,int scale){
+        lv_obj_t *canvas=lv_canvas_create(box);
+        lv_canvas_set_buffer(canvas,buffer,canvas_width,height,LV_IMG_CF_TRUE_COLOR);
+        lv_canvas_fill_bg(canvas,C_PANEL,LV_OPA_COVER);
+        int x=(canvas_width-ycb_hangul_measure(text,scale))/2;if(x<0)x=0;
+        ycb_hangul_draw(canvas,x,(height-16*scale)/2,color,C_PANEL,text,scale,false);
+        lv_obj_set_pos(canvas,35,y);
+        lv_obj_clear_flag(canvas,LV_OBJ_FLAG_CLICKABLE|LV_OBJ_FLAG_SCROLLABLE);
+    };
+    drawLine(s_error_title_buf,52,title,22,C_YELLOW,2);
+    drawLine(s_error_line1_buf,42,line1,104,C_WHITE,1);
+    drawLine(s_error_line2_buf,42,line2,150,C_WHITE,1);
+
+    lv_obj_t *ok=makeBtn(box,245,230,150,58,"",C_BLUE,cbErrorPopupOk,this);
+    lv_obj_t *ok_canvas=lv_canvas_create(ok);
+    lv_canvas_set_buffer(ok_canvas,s_error_ok_buf,150,50,LV_IMG_CF_TRUE_COLOR);
+    lv_canvas_fill_bg(ok_canvas,C_BLUE,LV_OPA_COVER);
+    const char *ok_text="확인";
+    int ok_x=(150-ycb_hangul_measure(ok_text,2))/2;
+    ycb_hangul_draw(ok_canvas,ok_x,9,C_WHITE,C_BLUE,ok_text,2,false);
+    lv_obj_center(ok_canvas);
+    lv_obj_clear_flag(ok_canvas,LV_OBJ_FLAG_CLICKABLE|LV_OBJ_FLAG_SCROLLABLE);
+}
+
+void DryerApp::cbErrorPopupOk(lv_event_t *e)
+{
+    DryerApp *self=static_cast<DryerApp*>(lv_event_get_user_data(e));
+    if(!self)return;
+    if(self->_error_popup_overlay){lv_obj_del(self->_error_popup_overlay);self->_error_popup_overlay=nullptr;}
+    lv_scr_load(self->_scr_main);
+    self->_cur_scr=SCR_MAIN;
+    self->refreshHeader();self->refreshCards();self->refreshFooter();
 }
 
 void DryerApp::processAlarmEvent(uint8_t bit, bool active)
 {
     static const char *const names[16] = {
-        "DOOR_OPEN", "THERMIST_SHORT", "THERMIST_OPEN", "THERMO_STATE",
+        "DOOR_OPEN", "CONTROL_SENSOR_ERROR", "WEIGHT_SENSOR_ERROR", "THERMO_STATE",
         "FAN_MIN_ERROR", "FAN_MAX_ERROR", "HEATER1_ERROR", "HEATER2_ERROR",
         "MEM_ERROR", "UNDER_HEAT", "OVER_HEAT", "FAN_RELAY_ON",
         "HEATER_RELAY_ON", "DAMPER_RELAY_ON", "X14", "PWR_ON"
     };
     if (bit >= 16) return;
+    if (bit == 9) _footer_icon_state_valid = false;
+    if (active && (bit == 1 || bit == 4 || bit == 5 || bit == 10)) {
+        _dry_state = DRY_FINISH;
+        _remaining_min = 0;
+        _pre_time_remain = 0;
+        _tick_s = 0;
+        _fan_on = false;
+        _heater_on = false;
+        saveRuntimeState();
+        if (bit == 1)
+            showErrorPopup("제어 센서 통신 오류",
+                           "RS485 주소 100 통신이 5회 연속 실패했습니다.",
+                           "건조기를 정지했습니다. 센서와 배선을 확인하세요.");
+        else if (bit == 4)
+            showErrorPopup("팬 저속 오류",
+                           "팬 동작 중 풍속이 5.0 m/s 미만입니다.",
+                           "정지했습니다. 팬, 벨트, 흡입구와 ADC를 확인하세요.");
+        else if (bit == 5)
+            showErrorPopup("팬 과속 오류",
+                           "팬 동작 중 풍속이 15.0 m/s를 초과했습니다.",
+                           "정지했습니다. 팬 구동상태와 ADC를 확인하세요.");
+        else
+            showErrorPopup("고온 오류",
+                           "설정된 고온 경고값을 5초 이상 초과했습니다.",
+                           "건조기를 정지했습니다. 히터와 센서를 확인하세요.");
+    }
+    if (active && bit == 9)
+        showErrorPopup("저온 오류",
+                       "설정된 도달시간 안에 목표온도에 도달하지 못했습니다.",
+                       "히터 전원과 건조실의 열 손실을 확인하세요.");
+    if (active && bit == 6)
+        showErrorPopup("히터 1 오류",
+                       "히터가 20분 동안 켜졌지만 온도가 상승하지 않았습니다.",
+                       "히터 전원, 접촉기 및 온도센서를 확인하세요.");
     printf("ALARM EVENT: bit=%u name=%s state=%s data=0x%04X\n",
            static_cast<unsigned>(bit), names[bit], active ? "ON" : "OFF",
            static_cast<unsigned>(g_alarm_info.data));
@@ -2313,11 +2550,13 @@ void DryerApp::applyActuatorSafetyChecks(void)
         g_dryer_sensor_values.temperature_humidity[0];
     const bool heating_state = _dry_state == DRY_PREHEAT || _dry_state == DRY_RUN;
     const bool over_temperature = g_alarm_info.over_heat != 0;
+    const bool control_sensor_error = g_alarm_info.control_sensor_error != 0;
 
     /* Door state is informational only and does not interlock the heater. */
-    if (!heating_state || !control.valid || over_temperature) {
+    if (!heating_state || !control.valid || over_temperature || control_sensor_error) {
         _heater_on = false;
     }
+    if (control_sensor_error || over_temperature) _fan_on = false;
 }
 
 void DryerApp::writeActuatorOutputs(void)

@@ -57,6 +57,8 @@ public:
     // Direct address lookup for addresses 100..106.
     bool reading(uint8_t slaveAddress, Reading &out) const;
     void setLoadCell(LoadCell *loadCell) { loadCell_ = loadCell; }
+    uint8_t controlFailureCount() const;
+    uint8_t loadCellFailureCount() const;
 
 private:
     static void taskEntry(void *context);
@@ -70,4 +72,6 @@ private:
     volatile bool stopRequested_ = false;
     Reading readings_[kSensorCount]{};
     LoadCell *loadCell_ = nullptr;
+    uint8_t controlFailureCount_ = 0;
+    uint8_t loadCellFailureCount_ = 0;
 };

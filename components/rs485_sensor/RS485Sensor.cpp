@@ -100,6 +100,22 @@ bool RS485Sensor::reading(uint8_t address, Reading &out) const
     return true;
 }
 
+uint8_t RS485Sensor::controlFailureCount() const
+{
+    if (mutex_ == nullptr || xSemaphoreTake(mutex_, pdMS_TO_TICKS(20)) != pdTRUE) return 0;
+    const uint8_t result = controlFailureCount_;
+    xSemaphoreGive(mutex_);
+    return result;
+}
+
+uint8_t RS485Sensor::loadCellFailureCount() const
+{
+    if (mutex_ == nullptr || xSemaphoreTake(mutex_, pdMS_TO_TICKS(20)) != pdTRUE) return 0;
+    const uint8_t result = loadCellFailureCount_;
+    xSemaphoreGive(mutex_);
+    return result;
+}
+
 void RS485Sensor::taskEntry(void *context)
 {
     static_cast<RS485Sensor *>(context)->pollLoop();
@@ -121,6 +137,10 @@ void RS485Sensor::pollLoop()
             }
             if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
                 readings_[address - kControlAddress] = value;
+                if (address == kControlAddress) {
+                    controlFailureCount_ = err == ESP_OK ? 0 :
+                        (controlFailureCount_ < UINT8_MAX ? controlFailureCount_ + 1 : UINT8_MAX);
+                }
                 xSemaphoreGive(mutex_);
             }
         }
@@ -129,6 +149,11 @@ void RS485Sensor::pollLoop()
             if (err != ESP_OK) {
                 ESP_LOGW(kTag, "load cell slave %u: %s",
                          LoadCell::kModbusSlaveAddress, esp_err_to_name(err));
+            }
+            if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
+                loadCellFailureCount_ = err == ESP_OK ? 0 :
+                    (loadCellFailureCount_ < UINT8_MAX ? loadCellFailureCount_ + 1 : UINT8_MAX);
+                xSemaphoreGive(mutex_);
             }
         }
         ulTaskNotifyTake(pdTRUE, kCycleDelay);
