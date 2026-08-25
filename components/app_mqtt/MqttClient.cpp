@@ -387,6 +387,7 @@ bool MqttClient::publishTelemetry(const DryerSensorValues &values)
         "\"fanRelayOn\":%s,\"heaterRelayOn\":%s,\"damperRelayOn\":%s,"
         "\"reserved14\":%s,\"mqttConnect\":%s},"
         "\"remainingTimeMinutes\":%" PRId32 ","
+        "\"targetTemperatureC\":%.1f,"
         "\"operatingState\":%d,\"operatingStateName\":\"%s\","
         "\"damperPercent\":%.1f}",
         values.load_cell.raw, static_cast<double>(values.load_cell.weight_g),
@@ -412,6 +413,7 @@ bool MqttClient::publishTelemetry(const DryerSensorValues &values)
         values.event.x14 ? "true" : "false",
         values.event.mqtt_connect ? "true" : "false",
         values.remaining_time_min,
+        static_cast<double>(values.target_temperature_c),
         static_cast<int>(values.operating_state),
         dryStateName(values.operating_state),
         static_cast<double>(values.damper_percent));
@@ -508,15 +510,11 @@ void MqttClient::storeCommand(const char *payload, int length)
         command.hasTemperature = readInteger("preheat_temp", command.temperature);
         command.hasTime = readInteger("preheat_time", command.timeMinutes);
         command.damperMode = readDamper("damper");
-        if (!command.hasTemperature || !command.hasTime || command.damperMode < 0)
-            command.type = MqttCommandType::None;
     } else if (strcmp(name, "dry_start") == 0) {
         command.type = MqttCommandType::DryStart;
         command.hasTemperature = readInteger("dry_temp", command.temperature);
         command.hasTime = readInteger("dry_time", command.timeMinutes);
         command.damperMode = readDamper("damper");
-        if (!command.hasTemperature || !command.hasTime || command.damperMode < 0)
-            command.type = MqttCommandType::None;
     } else if (strcmp(name, "dry_stop") == 0) {
         command.type = MqttCommandType::DryStop;
         command.damperMode = readDamper("damper");  // optional on stop

@@ -11,6 +11,18 @@ void LoadCell::updateRaw(int32_t raw, TickType_t updated_at)
     taskEXIT_CRITICAL(&lock_);
 }
 
+void LoadCell::updateIndicatorWeight(int32_t raw, float weight_g,
+                                     TickType_t updated_at)
+{
+    taskENTER_CRITICAL(&lock_);
+    raw_ = raw;
+    indicatorWeightG_ = weight_g;
+    indicatorWeightValid_ = true;
+    updated_at_ = updated_at;
+    valid_ = true;
+    taskEXIT_CRITICAL(&lock_);
+}
+
 LoadCellReading LoadCell::reading() const
 {
     LoadCellReading result{};
@@ -18,7 +30,7 @@ LoadCellReading LoadCell::reading() const
     result.raw = raw_;
     result.updated_at = updated_at_;
     result.valid = valid_;
-    result.weight_g = calculateWeight(raw_);
+    result.weight_g = indicatorWeightValid_ ? indicatorWeightG_ : calculateWeight(raw_);
     taskEXIT_CRITICAL(&lock_);
     return result;
 }

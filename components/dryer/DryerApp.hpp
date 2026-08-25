@@ -161,6 +161,7 @@ private:
     DryerNvsCoolingSettings _dryer_settings;
     DryerNvsCoolingSettings _dryer_settings_edit;
     int   _dryer_setting_sel;
+    int   _dryer_ip_octet_sel;
     float _cur_temp;
     float _humidity;
     float _set_temp;
@@ -325,10 +326,10 @@ private:
     static void cbWeightSaveExit(lv_event_t *e);
     static void cbWeightExit(lv_event_t *e);
     static void cbOpenCoolingSettings(lv_event_t *e);
-    static void cbCoolingItemPrev(lv_event_t *e);
-    static void cbCoolingItemNext(lv_event_t *e);
+    static void cbCoolingRowSelect(lv_event_t *e);
     static void cbCoolingValueDn(lv_event_t *e);
     static void cbCoolingValueUp(lv_event_t *e);
+    static void cbCoolingIpNextOctet(lv_event_t *e);
     static void cbCoolingReset(lv_event_t *e);
     static void cbCoolingSaveExit(lv_event_t *e);
     static void cbCoolingExit(lv_event_t *e);

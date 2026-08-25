@@ -9,13 +9,13 @@
 #define MODBUS_CONTROL_ADDRESS         100
 #define MODBUS_MONITOR_FIRST_ADDRESS  101
 #define MODBUS_MONITOR_LAST_ADDRESS   106
-#define MODBUS_LOAD_CELL_ADDRESS       200
-#define MODBUS_LOAD_CELL_WEIGHT_REG      0
+#define MODBUS_LOAD_CELL_ADDRESS         1  /* AD500A factory device number 01 */
+#define MODBUS_LOAD_CELL_WEIGHT_REG      0  /* AD500A input register 1, PDU address 0 */
 
 /* Application-wide limits */
 #define DRYER_SENSOR_COUNT               7
 #define DRYER_MONITOR_COUNT              6
-#define DRYER_SETTING_COUNT              18
+#define DRYER_SETTING_COUNT              14
 
 /* Dryer operating state shared by all application components. */
 typedef enum {
@@ -105,6 +105,7 @@ typedef struct {
     DoorSensorValue door;
     EVENT_INFO event;
     int32_t remaining_time_min;
+    float target_temperature_c;
     DryState operating_state;
     float damper_percent;
     TickType_t updated_at;

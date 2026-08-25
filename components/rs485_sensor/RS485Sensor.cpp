@@ -164,29 +164,41 @@ void RS485Sensor::pollLoop()
 
 esp_err_t RS485Sensor::pollLoadCell()
 {
+    /* Temperature sensors use 8N1 while AD500A Modbus requires 8E1.
+       Switch only for this transaction and always restore 8N1 on return. */
+    if (uart_set_parity(kUart, UART_PARITY_EVEN) != ESP_OK) return ESP_FAIL;
+    struct RestoreParity {
+        ~RestoreParity() { uart_set_parity(kUart, UART_PARITY_DISABLE); }
+    } restoreParity;
     const uint8_t address = LoadCell::kModbusSlaveAddress;
+    /* AD500A input registers 1..4 (PDU 0..3): decimal position, unit,
+       and signed 32-bit displayed weight. */
     const uint16_t reg = LoadCell::kWeightRegister;
-    uint8_t request[8] = {address, 0x03,
+    uint8_t request[8] = {address, 0x04,
                           static_cast<uint8_t>(reg >> 8), static_cast<uint8_t>(reg),
-                          0, 2, 0, 0};
+                          0, 4, 0, 0};
     const uint16_t requestCrc = crc16(request, 6);
     request[6] = static_cast<uint8_t>(requestCrc);
     request[7] = static_cast<uint8_t>(requestCrc >> 8);
     uart_flush_input(kUart);
     if (uart_write_bytes(kUart, request, sizeof(request)) != sizeof(request)) return ESP_FAIL;
     if (uart_wait_tx_done(kUart, pdMS_TO_TICKS(100)) != ESP_OK) return ESP_ERR_TIMEOUT;
-    uint8_t response[9]{};
+    uint8_t response[13]{};
     const int received = uart_read_bytes(kUart, response, sizeof(response), kResponseTimeout);
     if (received != sizeof(response)) return ESP_ERR_TIMEOUT;
-    if (response[0] != address || response[1] != 0x03 || response[2] != 4)
+    if (response[0] != address || response[1] != 0x04 || response[2] != 8)
         return ESP_ERR_INVALID_RESPONSE;
-    const uint16_t receivedCrc = response[7] | (static_cast<uint16_t>(response[8]) << 8);
-    if (crc16(response, 7) != receivedCrc) return ESP_ERR_INVALID_CRC;
-    const uint32_t raw = (static_cast<uint32_t>(response[3]) << 24) |
-                         (static_cast<uint32_t>(response[4]) << 16) |
-                         (static_cast<uint32_t>(response[5]) << 8) |
-                         static_cast<uint32_t>(response[6]);
-    loadCell_->updateRaw(static_cast<int32_t>(raw), xTaskGetTickCount());
+    const uint16_t receivedCrc = response[11] | (static_cast<uint16_t>(response[12]) << 8);
+    if (crc16(response, 11) != receivedCrc) return ESP_ERR_INVALID_CRC;
+    const uint16_t decimalPosition=(static_cast<uint16_t>(response[3])<<8)|response[4];
+    const uint16_t unit=(static_cast<uint16_t>(response[5])<<8)|response[6];
+    const uint32_t rawUnsigned=(static_cast<uint32_t>(response[7])<<24)|
+        (static_cast<uint32_t>(response[8])<<16)|(static_cast<uint32_t>(response[9])<<8)|response[10];
+    if(decimalPosition>5||unit>2)return ESP_ERR_INVALID_RESPONSE;
+    float weight=static_cast<float>(static_cast<int32_t>(rawUnsigned));
+    for(uint16_t i=0;i<decimalPosition;i++)weight*=0.1F;
+    const float grams=unit==0?weight*1000.0F:unit==1?weight:weight*1000000.0F;
+    loadCell_->updateIndicatorWeight(static_cast<int32_t>(rawUnsigned),grams,xTaskGetTickCount());
     return ESP_OK;
 }
 

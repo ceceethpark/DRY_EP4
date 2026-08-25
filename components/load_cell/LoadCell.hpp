@@ -10,6 +10,7 @@ public:
     static constexpr uint16_t kWeightRegister = MODBUS_LOAD_CELL_WEIGHT_REG;
 
     void updateRaw(int32_t raw, TickType_t updated_at);
+    void updateIndicatorWeight(int32_t raw, float weight_g, TickType_t updated_at);
     LoadCellReading reading() const;
 
     void tare();
@@ -23,5 +24,7 @@ private:
     int32_t raw_ = 0;
     TickType_t updated_at_ = 0;
     bool valid_ = false;
+    bool indicatorWeightValid_ = false;
+    float indicatorWeightG_ = 0.0F;
     LoadCellCalibration calibration_{};
 };
