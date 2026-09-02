@@ -6,6 +6,7 @@ build_verify/
 .platformio/
 .remote_final/
 DY-EP4.git/
+*.bundle
 managed_components/
 sdkconfig.old
 video_frames/
