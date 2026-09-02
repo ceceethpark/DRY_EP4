@@ -5,6 +5,7 @@ build_verify/
 .pio/
 .platformio/
 .remote_final/
+DY-EP4.git/
 managed_components/
 sdkconfig.old
 video_frames/
