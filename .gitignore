@@ -7,6 +7,8 @@ build_verify/
 .remote_final/
 DY-EP4.git/
 *.bundle
+DY-EP4_git_share.zip
+화면 캡처*.png
 managed_components/
 sdkconfig.old
 video_frames/
