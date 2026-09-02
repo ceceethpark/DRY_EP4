@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>esp_brookesia_phone 프로그램 구조 정리</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --ink: #20242a;
+      --muted: #667085;
+      --line: #d9dee7;
+      --accent: #1565c0;
+      --accent-soft: #e7f0fb;
+      --ok: #1b7f45;
+      --warn: #9a6700;
+      --code: #18212f;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Malgun Gothic", "Segoe UI", Arial, sans-serif;
+      line-height: 1.58;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+
+    h1, h2, h3 { line-height: 1.25; }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    h2 { margin: 34px 0 14px; font-size: 22px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+    h3 { margin: 0 0 8px; font-size: 17px; }
+    p { margin: 8px 0; }
+
+    .subtitle { color: var(--muted); margin-bottom: 22px; }
+    .note {
+      background: var(--accent-soft);
+      border-left: 4px solid var(--accent);
+      padding: 12px 14px;
+      margin: 18px 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: #eef2f6;
+      color: #344054;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+
+    .ok { color: var(--ok); font-weight: 700; }
+    .warn { color: var(--warn); font-weight: 700; }
+    code, pre {
+      font-family: Consolas, "Cascadia Mono", monospace;
+      color: var(--code);
+    }
+    code {
+      background: #eef2f6;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    pre {
+      overflow-x: auto;
+      background: #111827;
+      color: #e5e7eb;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 13px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th { background: #eef2f6; }
+    tr:last-child td { border-bottom: 0; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .step {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .step strong { display: block; margin-bottom: 4px; color: var(--accent); }
+
+    ul { padding-left: 22px; }
+    li { margin: 5px 0; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>esp_brookesia_phone 프로그램 구조 정리</h1>
+  <p class="subtitle">대상 소스: <code>work/esp_brookesia_phone</code> / 진입점: <code>main/main.cpp</code></p>
+
+  <div class="note">
+    현재 첫 화면 앱은 <code>main.cpp</code>에서 <code>phone-&gt;installApp(...)</code>로 등록됩니다.
+    기본 등록 앱은 8개이며, SD 카드가 정상 마운트되면 <strong>Video Player</strong>가 추가되어 9개가 될 수 있습니다.
+  </div>
+
+  <h2>1. 전체 실행 흐름</h2>
+  <div class="flow">
+    <div class="step"><strong>1) NVS 초기화</strong><code>nvs_flash_init()</code>로 설정 저장소를 준비합니다.</div>
+    <div class="step"><strong>2) 파일 시스템</strong><code>bsp_spiffs_mount()</code>로 내부 SPIFFS를 마운트하고, SD 카드는 있으면 마운트합니다.</div>
+    <div class="step"><strong>3) 오디오</strong><code>bsp_extra_codec_init()</code>로 코덱/I2S 계열 장치를 준비합니다.</div>
+    <div class="step"><strong>4) LCD/LVGL</strong><code>bsp_display_start_with_config()</code>로 화면 버퍼와 LVGL 포트를 시작합니다.</div>
+    <div class="step"><strong>5) Phone Shell</strong><code>ESP_Brookesia_Phone</code> 객체를 만들고 1024x600 dark stylesheet를 적용합니다.</div>
+    <div class="step"><strong>6) 앱 등록</strong>각 앱 객체를 생성하고 <code>installApp()</code>으로 런처에 등록합니다.</div>
+  </div>
+
+  <h2>2. 앱 프레임워크 구조</h2>
+  <p>
+    각 앱은 대부분 <code>ESP_Brookesia_PhoneApp</code>을 상속합니다. Brookesia Phone Shell이 홈 화면, 앱 런처,
+    상태바/내비게이션바, 앱 전환을 관리하고, 개별 앱은 LVGL 화면과 실제 동작만 담당하는 구조입니다.
+  </p>
+  <pre><code>class Calculator: public ESP_Brookesia_PhoneApp {
+public:
+    bool init(void) override;   // 앱 UI/리소스 생성
+    bool run(void) override;    // 앱 실행, 화면 표시
+    bool pause(void) override;  // 다른 앱으로 전환될 때 일부 앱에서 사용
+    bool resume(void) override; // 다시 돌아올 때 일부 앱에서 사용
+    bool back(void) override;   // 하단 내비게이션/뒤로가기
+    bool close(void) override;  // 앱 종료 및 리소스 정리
+};</code></pre>
+
+  <p>
+    앱 목록 헤더는 <code>components/apps/apps.h</code>에 모여 있고,
+    <code>components/apps/CMakeLists.txt</code>는 <code>components/apps</code> 아래의 C/C++ 파일을 재귀적으로 모두 빌드에 포함합니다.
+  </p>
+
+  <h2>3. 첫 화면 앱 등록 순서</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>No.</th>
+        <th>런처 이름</th>
+        <th>클래스</th>
+        <th>소스 위치</th>
+        <th>동작 요약</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>Squareline</td>
+        <td><code>PhoneAppSquareline</code></td>
+        <td><code>components/espressif__esp-brookesia/src/app_examples/phone/squareline/src</code></td>
+        <td>Espressif Brookesia 예제 UI입니다. SquareLine Studio 기반 화면을 로드하며, 샘플 스마트폰 스타일 앱 화면을 제공합니다.</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Calculator</td>
+        <td><code>Calculator</code></td>
+        <td><code>components/apps/calculator</code></td>
+        <td>LVGL 버튼 매트릭스로 숫자/연산 버튼을 만들고, 입력 수식을 계산해 결과 라벨에 표시합니다.</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Music Player</td>
+        <td><code>MusicPlayer</code></td>
+        <td><code>components/apps/music_player</code></td>
+        <td>음악 재생 UI를 열고 오디오 플레이어를 제어합니다. 앱 종료/뒤로가기 시 재생을 일시정지하거나 정리합니다.</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>Settings</td>
+        <td><code>AppSettings</code></td>
+        <td><code>components/apps/setting</code></td>
+        <td>Wi-Fi 스캔/접속, BLE 토글 UI, 볼륨, 밝기, About 화면을 담당합니다. 설정값은 NVS에 저장됩니다.</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>2048 Game</td>
+        <td><code>Game2048</code></td>
+        <td><code>components/apps/game_2048</code></td>
+        <td>4x4 보드 게임입니다. Brookesia gesture 객체로 상하좌우 스와이프를 받고, 최고 점수는 NVS에 저장합니다.</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>Camera</td>
+        <td><code>Camera</code></td>
+        <td><code>components/apps/camera</code></td>
+        <td>카메라 파이프라인, V4L2/ESP Video, 얼굴/보행자 감지 모듈을 사용합니다. 카메라 핸들이 없으면 등록 후 바로 제거됩니다.</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>Image</td>
+        <td><code>AppImageDisplay</code></td>
+        <td><code>components/apps/image_display</code></td>
+        <td>JPG 이미지를 디코딩해서 화면에 표시합니다. 제스처로 이미지 전환이 가능하도록 구성되어 있습니다.</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td>Echo</td>
+        <td><code>NewApp</code></td>
+        <td><code>components/apps/new_app</code></td>
+        <td>새 앱 템플릿을 기반으로 만든 Echo 앱입니다. Start/Stop 버튼으로 I2S 마이크 입력을 읽어 스피커로 다시 출력합니다.</td>
+      </tr>
+      <tr>
+        <td>옵션</td>
+        <td>Video Player</td>
+        <td><code>AppVideoPlayer</code></td>
+        <td><code>components/apps/video_player</code></td>
+        <td>SD 카드가 마운트된 경우에만 추가됩니다. <code>/sdcard/mjpeg</code> 아래의 MJPEG/AVI 계열 파일을 재생합니다.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. main.cpp 기준 앱 등록 코드</h2>
+  <pre><code>PhoneAppSquareline *smart_gadget = new PhoneAppSquareline();
+phone-&gt;installApp(smart_gadget);
+
+Calculator *calculator = new Calculator();
+phone-&gt;installApp(calculator);
+
+MusicPlayer *music_player = new MusicPlayer();
+phone-&gt;installApp(music_player);
+
+AppSettings *app_settings = new AppSettings();
+phone-&gt;installApp(app_settings);
+
+Game2048 *game_2048 = new Game2048();
+phone-&gt;installApp(game_2048);
+
+Camera *camera = new Camera(1288, 728);
+phone-&gt;installApp(camera);
+if (camera-&gt;get_camera_ctlr_handle() &lt; 0) {
+    phone-&gt;uninstallApp(camera);
+}
+
+AppImageDisplay *image = new AppImageDisplay();
+phone-&gt;installApp(image);
+
+NewApp *new_app = new NewApp(480, 800);
+phone-&gt;installApp(new_app);
+
+if (ret == ESP_OK) {
+    AppVideoPlayer *app_video_player = new AppVideoPlayer();
+    phone-&gt;installApp(app_video_player);
+}</code></pre>
+
+  <h2>5. 앱별 상세 동작</h2>
+  <div class="grid">
+    <section class="card">
+      <h3>Squareline</h3>
+      <span class="pill">Brookesia 예제</span><span class="pill">SquareLine UI</span>
+      <p><code>PhoneAppSquareline::run()</code>에서 예제 메인 화면을 초기화하고 표시합니다. 앱 자체는 Espressif Brookesia 컴포넌트 안에 들어 있어, 프로젝트의 기본 앱 예제 역할을 합니다.</p>
+    </section>
+
+    <section class="card">
+      <h3>Calculator</h3>
+      <span class="pill">LVGL</span><span class="pill">버튼 매트릭스</span>
+      <p><code>init()</code>에서 화면, 수식 라벨, 결과 라벨, 버튼 매트릭스를 만듭니다. 버튼 이벤트가 수식 문자열을 갱신하고 계산 결과를 표시합니다.</p>
+    </section>
+
+    <section class="card">
+      <h3>Music Player</h3>
+      <span class="pill">Audio Player</span><span class="pill">LVGL Music UI</span>
+      <p><code>run()</code>에서 음악 UI를 열고, <code>pause()</code>, <code>back()</code>, <code>close()</code>에서 오디오 재생을 멈추거나 일시정지합니다. UI 코드는 <code>gui_music</code> 폴더에 분리되어 있습니다.</p>
+    </section>
+
+    <section class="card">
+      <h3>Settings</h3>
+      <span class="pill">Wi-Fi</span><span class="pill">NVS</span><span class="pill">밝기/볼륨</span>
+      <p><code>initWifi()</code>에서 STA 모드를 초기화하고, <code>scanWifiAndUpdateUi()</code>로 AP 목록을 갱신합니다. Wi-Fi 접속은 별도 FreeRTOS task에서 수행됩니다.</p>
+      <p>현재 Wi-Fi가 정상 동작하고 ping이 되는 것은 이 앱의 Wi-Fi 설정 경로가 동작한다는 의미입니다.</p>
+    </section>
+
+    <section class="card">
+      <h3>2048 Game</h3>
+      <span class="pill">Gesture</span><span class="pill">NVS Score</span><span class="pill">Sound</span>
+      <p><code>ESP_Brookesia_Gesture</code>로 스와이프 방향을 받고, 타일 이동/합산 후 점수를 갱신합니다. 최고 점수는 <code>NVS_STORAGE_NAMESPACE</code>의 <code>score</code> 키에 저장합니다.</p>
+    </section>
+
+    <section class="card">
+      <h3>Camera</h3>
+      <span class="pill">ESP Video</span><span class="pill">MIPI CSI</span><span class="pill">AI Detection</span>
+      <p><code>app_video_main()</code>과 카메라 파이프라인을 사용해 프레임을 얻고 화면에 출력합니다. 얼굴 감지/보행자 감지 컴포넌트도 빌드 의존성에 포함됩니다.</p>
+    </section>
+
+    <section class="card">
+      <h3>Image</h3>
+      <span class="pill">JPEG Decoder</span><span class="pill">Gesture</span>
+      <p>JPG 파일을 디코딩해 LVGL 이미지 버퍼로 표시합니다. 좌우 제스처 또는 이벤트로 다음/이전 이미지 표시가 가능합니다.</p>
+    </section>
+
+    <section class="card">
+      <h3>Echo / NewApp</h3>
+      <span class="pill">I2S Read/Write</span><span class="pill">Custom App</span>
+      <p><code>NewApp</code>은 새 기능을 붙이기 좋은 위치입니다. 현재 구현은 Start 버튼을 누르면 <code>bsp_extra_i2s_read()</code>로 읽은 데이터를 <code>bsp_extra_i2s_write()</code>로 다시 출력합니다.</p>
+    </section>
+  </div>
+
+  <h2>6. 리소스와 저장 위치</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>항목</th>
+        <th>위치/역할</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>SPIFFS</td>
+        <td><code>spiffs</code> 폴더가 플래시에 올라갑니다. 이미지, 음악, 2048 효과음 같은 고정 리소스에 사용됩니다.</td>
+      </tr>
+      <tr>
+        <td>SD 카드</td>
+        <td>마운트 성공 시 Video Player 앱이 추가됩니다. 비디오 파일은 코드상 <code>/sdcard/mjpeg</code> 경로를 사용합니다.</td>
+      </tr>
+      <tr>
+        <td>NVS</td>
+        <td>Settings 앱의 Wi-Fi/볼륨/밝기 설정, 2048 최고 점수 저장에 사용됩니다.</td>
+      </tr>
+      <tr>
+        <td>앱 아이콘</td>
+        <td>각 앱 폴더의 <code>assets</code> 또는 UI image 파일에서 <code>LV_IMG_DECLARE(...)</code>로 참조됩니다.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>7. 새 앱을 추가하는 방법</h2>
+  <ol>
+    <li><code>components/apps/my_app</code> 같은 새 폴더를 만듭니다.</li>
+    <li><code>ESP_Brookesia_PhoneApp</code>을 상속하는 C++ 클래스를 작성합니다.</li>
+    <li><code>init()</code>에서 LVGL 화면과 버튼/라벨/이벤트를 만들고, <code>run()</code>에서 화면을 로드합니다.</li>
+    <li>필요하면 <code>pause()</code>, <code>resume()</code>, <code>back()</code>, <code>close()</code>에서 task, timer, audio, camera 리소스를 정리합니다.</li>
+    <li><code>components/apps/apps.h</code>에 새 앱 헤더를 include합니다.</li>
+    <li><code>main/main.cpp</code>에서 객체를 만들고 <code>phone-&gt;installApp(my_app)</code>를 호출합니다.</li>
+  </ol>
+
+  <h2>8. 현재 소스에서 특히 볼 부분</h2>
+  <ul>
+    <li><code>main/main.cpp</code>: 부팅 초기화, Phone Shell 생성, 앱 설치 순서.</li>
+    <li><code>components/apps/apps.h</code>: 프로젝트 앱 헤더 목록.</li>
+    <li><code>components/apps/CMakeLists.txt</code>: 앱 소스 자동 수집 및 의존 컴포넌트.</li>
+    <li><code>components/apps/setting/Setting.cpp</code>: Wi-Fi, 밝기, 볼륨, NVS 설정 처리.</li>
+    <li><code>components/apps/new_app/NewApp.cpp</code>: 사용자가 기능을 추가하기 가장 쉬운 예제 앱.</li>
+  </ul>
+
+  <div class="note">
+    <span class="ok">정리:</span>
+    이 펌웨어는 “ESP-IDF BSP 초기화 + LVGL + ESP Brookesia Phone Shell + 개별 앱 클래스” 구조입니다.
+    첫 화면의 8개 앱은 런처 데이터 파일에서 자동 생성되는 것이 아니라, <code>main.cpp</code>에서 C++ 객체를 직접 생성하고 등록하는 방식입니다.
+  </div>
+</main>
+</body>
+</html>

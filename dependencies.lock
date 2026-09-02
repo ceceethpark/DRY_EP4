@@ -1,0 +1,162 @@
+dependencies:
+  espressif/cmake_utilities:
+    dependencies: []
+    source:
+      path: C:\Users\thpark\SynologyDrive\6k2jvr_work\prj_HMI\DY-EP4\src\components\espressif__cmake_utilities
+      type: local
+    version: 0.5.3
+  espressif/esp_cam_sensor:
+    dependencies: []
+    source:
+      path: C:\Users\thpark\SynologyDrive\6k2jvr_work\prj_HMI\DY-EP4\src\components\espressif__esp_cam_sensor
+      type: local
+    version: 1.2.1
+  espressif/esp_codec_dev:
+    dependencies: []
+    source:
+      path: C:\Users\thpark\SynologyDrive\6k2jvr_work\prj_HMI\DY-EP4\src\components\espressif__esp_codec_dev
+      type: local
+    version: 1.5.11
+  espressif/esp_h264:
+    component_hash: fa5daaebc8a304f0b79bc57e51aab43e0a03eabc2ba3865bff4063c56b5d4564
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.4'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 1.0.4
+  espressif/esp_ipa:
+    component_hash: d198b1864f1abd263f97956713639617b3ead35e1871a41c755c4ef89b83121c
+    dependencies:
+    - name: espressif/cmake_utilities
+      registry_url: https://components.espressif.com
+      require: private
+      version: 0.*
+    - name: idf
+      require: private
+      version: '>=5.4'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    targets:
+    - esp32p4
+    version: 1.0.1
+  espressif/esp_lcd_ek79007:
+    dependencies: []
+    source:
+      path: C:\Users\thpark\SynologyDrive\6k2jvr_work\prj_HMI\DY-EP4\src\components\espressif__esp_lcd_ek79007
+      type: local
+    version: 2.0.2~1
+  espressif/esp_lcd_ili9881c:
+    dependencies: []
+    source:
+      path: C:\Users\thpark\SynologyDrive\6k2jvr_work\prj_HMI\DY-EP4\src\components\espressif__esp_lcd_ili9881c
+      type: local
+    version: 1.1.0
+  espressif/esp_lcd_jd9165:
+    dependencies: []
+    source:
+      path: C:\Users\thpark\SynologyDrive\6k2jvr_work\prj_HMI\DY-EP4\src\components\espressif__esp_lcd_jd9165
+      type: local
+    version: 2.0.2
+  espressif/esp_lcd_lt8912b:
+    dependencies: []
+    source:
+      path: C:\Users\thpark\SynologyDrive\6k2jvr_work\prj_HMI\DY-EP4\src\components\espressif__esp_lcd_lt8912b
+      type: local
+    version: 0.2.0
+  espressif/esp_lcd_touch:
+    dependencies: []
+    source:
+      path: C:\Users\thpark\SynologyDrive\6k2jvr_work\prj_HMI\DY-EP4\src\components\espressif__esp_lcd_touch
+      type: local
+    version: 1.2.1
+  espressif/esp_lcd_touch_gt911:
+    dependencies: []
+    source:
+      path: C:\Users\thpark\SynologyDrive\6k2jvr_work\prj_HMI\DY-EP4\src\components\espressif__esp_lcd_touch_gt911
+      type: local
+    version: 1.2.0~2
+  espressif/esp_lvgl_port:
+    dependencies: []
+    source:
+      path: C:\Users\thpark\SynologyDrive\6k2jvr_work\prj_HMI\DY-EP4\src\components\espressif__esp_lvgl_port
+      type: local
+    version: 2.8.0~1
+  espressif/esp_sccb_intf:
+    component_hash: c071b189e49f40940722aea01a5489f873385cc39cd5b14012341135b85d1a9d
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.3'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 0.0.8
+  espressif/esp_video:
+    component_hash: 08283d4bca33dd9568ee683c435dab29e13f9e9aec605b9f437f10a2e43bbb04
+    dependencies:
+    - name: espressif/cmake_utilities
+      registry_url: https://components.espressif.com
+      require: private
+      version: 0.*
+    - name: espressif/esp_cam_sensor
+      registry_url: https://components.espressif.com
+      require: private
+      version: 1.2.*
+    - name: espressif/esp_h264
+      registry_url: https://components.espressif.com
+      require: private
+      rules:
+      - if: target in [esp32p4]
+      version: 1.0.4
+    - name: espressif/esp_ipa
+      registry_url: https://components.espressif.com
+      require: private
+      rules:
+      - if: target in [esp32p4]
+      version: ~1.0.0
+    - name: idf
+      require: private
+      version: '>=5.4'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    targets:
+    - esp32p4
+    - esp32s3
+    - esp32c3
+    - esp32c5
+    - esp32c6
+    - esp32c61
+    version: 1.1.0
+  idf:
+    source:
+      type: idf
+    version: 5.5.5
+  lvgl/lvgl:
+    dependencies: []
+    source:
+      path: C:\Users\thpark\SynologyDrive\6k2jvr_work\prj_HMI\DY-EP4\src\components\lvgl__lvgl
+      type: local
+    version: 8.4.0
+direct_dependencies:
+- espressif/cmake_utilities
+- espressif/esp_cam_sensor
+- espressif/esp_codec_dev
+- espressif/esp_lcd_ek79007
+- espressif/esp_lcd_ili9881c
+- espressif/esp_lcd_jd9165
+- espressif/esp_lcd_lt8912b
+- espressif/esp_lcd_touch
+- espressif/esp_lcd_touch_gt911
+- espressif/esp_lvgl_port
+- espressif/esp_sccb_intf
+- espressif/esp_video
+- idf
+- lvgl/lvgl
+manifest_hash: 2c0ca7f6f62f4bd49256931b9e8a91fcee13cf2f0177de8a10051ed30c0cf14f
+target: esp32p4
+version: 2.0.0

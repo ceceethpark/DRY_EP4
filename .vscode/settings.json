@@ -1,0 +1,29 @@
+{
+    "idf.currentSetup": "C:\\Users\\thpark\\esp-idf-v5.5.3",
+    "idf.buildPath": "C:/Users/thpark/AppData/Local/Temp/DY_EP4_vscode_build",
+    "idf.buildPathWin": "C:/Users/thpark/AppData/Local/Temp/DY_EP4_vscode_build",
+    "idf.portWin": "COM3",
+    "idf.flashType": "UART",
+    "idf.flashBaudRate": "460800",
+    "platformio-ide.autoRebuildAutocompleteIndex": false,
+    "platformio-ide.activateOnlyOnPlatformIOProject": true,
+    "platformio-ide.useBuiltinPIOCore": true,
+    "workbench.statusBar.visible": true,
+    "platformio-ide.toolbar": [
+        {
+            "text": "$(tools)",
+            "tooltip": "PlatformIO: Build",
+            "commands": "platformio-ide.build"
+        },
+        {
+            "text": "$(zap)",
+            "tooltip": "PlatformIO: Upload",
+            "commands": "platformio-ide.upload"
+        },
+        {
+            "text": "$(plug)",
+            "tooltip": "PlatformIO: Serial Monitor",
+            "commands": "platformio-ide.serialMonitor"
+        }
+    ]
+}

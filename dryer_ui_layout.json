@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "name": "DY-EP4 Main UI",
+  "screen": { "width": 1024, "height": 600, "background": "#111111" },
+  "palette": {
+    "navy": "#12324A", "blue": "#0067A3", "orange": "#D35400",
+    "green": "#287D3C", "purple": "#663399", "dark": "#202A33",
+    "panel": "#263746", "cyan": "#00D8E8", "white": "#FFFFFF",
+    "gray": "#737B82"
+  },
+  "elements": [
+    { "id":"brand", "type":"tile", "label":"한울 로고", "x":0, "y":0, "w":296, "h":116, "bg":"#F5F3EA", "text":"hanwool", "tx":"#1A4C72", "fs":28, "align":"center" },
+
+    { "id":"sensor_panel", "type":"group", "label":"온습도 센서 1~6", "x":0, "y":120, "w":296, "h":270, "bg":"#12324A", "text":"", "tx":"#FFFFFF", "fs":14, "align":"left" },
+    { "id":"sensor_1", "type":"row", "label":"온습도1 (101)", "x":0, "y":120, "w":296, "h":45, "bg":"#202A33", "bd":"#536675", "bw":1, "text":"온습도1   (101)          --", "tx":"#AFC5D5", "fs":16, "align":"left" },
+    { "id":"sensor_2", "type":"row", "label":"온습도2 (102)", "x":0, "y":165, "w":296, "h":45, "bg":"#202A33", "bd":"#536675", "bw":1, "text":"온습도2   (102)          --", "tx":"#AFC5D5", "fs":16, "align":"left" },
+    { "id":"sensor_3", "type":"row", "label":"온습도3 (103)", "x":0, "y":210, "w":296, "h":45, "bg":"#202A33", "bd":"#536675", "bw":1, "text":"온습도3   (103)          --", "tx":"#AFC5D5", "fs":16, "align":"left" },
+    { "id":"sensor_4", "type":"row", "label":"온습도4 (104)", "x":0, "y":255, "w":296, "h":45, "bg":"#202A33", "bd":"#536675", "bw":1, "text":"온습도4   (104)          --", "tx":"#AFC5D5", "fs":16, "align":"left" },
+    { "id":"sensor_5", "type":"row", "label":"온습도5 (105)", "x":0, "y":300, "w":296, "h":45, "bg":"#202A33", "bd":"#536675", "bw":1, "text":"온습도5   (105)          --", "tx":"#AFC5D5", "fs":16, "align":"left" },
+    { "id":"sensor_6", "type":"row", "label":"온습도6 (106)", "x":0, "y":345, "w":296, "h":45, "bg":"#202A33", "bd":"#536675", "bw":1, "text":"온습도6   (106)          --", "tx":"#AFC5D5", "fs":16, "align":"left" },
+    { "id":"weight", "type":"row", "label":"무게", "x":0, "y":390, "w":296, "h":45, "bg":"#202A33", "bd":"#536675", "bw":1, "text":"무게                         --", "tx":"#AFC5D5", "fs":16, "align":"left" },
+    { "id":"dryness", "type":"row", "label":"건조도", "x":0, "y":435, "w":296, "h":45, "bg":"#202A33", "bd":"#536675", "bw":1, "text":"건조도                      --", "tx":"#AFC5D5", "fs":16, "align":"left" },
+    { "id":"equipment", "type":"tile", "label":"장비 이름/ID", "x":0, "y":480, "w":296, "h":120, "bg":"#12324A", "text":"DY-EP4\nID ------", "tx":"#FFFFFF", "fs":20, "align":"left" },
+
+    { "id":"current", "type":"tile", "label":"현재온도/습도", "x":300, "y":0, "w":234, "h":116, "bg":"#D35400", "text":"현재온도 / 습도\n26°C       74%\n2026-08-03 04:25", "tx":"#FFFFFF", "fs":17, "align":"center" },
+    { "id":"set_temperature", "type":"tile", "label":"설정온도", "x":538, "y":0, "w":234, "h":116, "bg":"#0067A3", "text":"설정온도\n41°C", "tx":"#FFFFFF", "fs":24, "align":"center" },
+    { "id":"set_temp_up", "type":"button", "label":"설정온도 올림", "x":776, "y":0, "w":120, "h":116, "bg":"#0067A3", "text":"설정온도\n▲", "tx":"#FFFFFF", "fs":25, "align":"center" },
+    { "id":"set_temp_down", "type":"button", "label":"설정온도 내림", "x":900, "y":0, "w":124, "h":116, "bg":"#0067A3", "text":"설정온도\n▼", "tx":"#FFFFFF", "fs":25, "align":"center" },
+
+    { "id":"operating_state", "type":"tile", "label":"운전상태", "x":300, "y":120, "w":234, "h":116, "bg":"#12324A", "text":"운전상태\n대기", "tx":"#FFFFFF", "fs":22, "align":"left" },
+    { "id":"remaining_time", "type":"tile", "label":"남은시간", "x":538, "y":120, "w":234, "h":116, "bg":"#663399", "text":"남은시간\n00:00", "tx":"#FFFFFF", "fs":27, "align":"center" },
+    { "id":"dry_time_up", "type":"button", "label":"건조시간 올림", "x":776, "y":120, "w":120, "h":116, "bg":"#663399", "text":"건조시간\n▲", "tx":"#FFFFFF", "fs":25, "align":"center" },
+    { "id":"dry_time_down", "type":"button", "label":"건조시간 내림", "x":900, "y":120, "w":124, "h":116, "bg":"#663399", "text":"건조시간\n▼", "tx":"#FFFFFF", "fs":25, "align":"center" },
+
+    { "id":"preheat_setting", "type":"tile", "label":"예열 설정", "x":300, "y":240, "w":234, "h":116, "bg":"#287D3C", "text":"예열온도       예열시간\n41°C            10:00", "tx":"#FFFFFF", "fs":18, "align":"center" },
+    { "id":"preheat_remaining", "type":"tile", "label":"남은예열시간", "x":538, "y":240, "w":234, "h":116, "bg":"#287D3C", "text":"남은예열시간\n00:00", "tx":"#FFFFFF", "fs":25, "align":"center" },
+    { "id":"pre_temp_up", "type":"button", "label":"예열온도 올림", "x":776, "y":240, "w":120, "h":76, "bg":"#287D3C", "text":"예열온도  ▲", "tx":"#FFFFFF", "fs":17, "align":"center" },
+    { "id":"pre_time_up", "type":"button", "label":"예열시간 올림", "x":900, "y":240, "w":124, "h":76, "bg":"#287D3C", "text":"예열시간  ▲", "tx":"#FFFFFF", "fs":17, "align":"center" },
+    { "id":"pre_temp_down", "type":"button", "label":"예열온도 내림", "x":776, "y":320, "w":120, "h":76, "bg":"#287D3C", "text":"예열온도  ▼", "tx":"#FFFFFF", "fs":17, "align":"center" },
+    { "id":"pre_time_down", "type":"button", "label":"예열시간 내림", "x":900, "y":320, "w":124, "h":76, "bg":"#287D3C", "text":"예열시간  ▼", "tx":"#FFFFFF", "fs":17, "align":"center" },
+
+    { "id":"message", "type":"tile", "label":"메시지", "x":300, "y":360, "w":472, "h":116, "bg":"#202A33", "text":"메시지\nWaiting for server control...", "tx":"#FFFFFF", "fs":16, "align":"left" },
+    { "id":"preheat_start", "type":"button", "label":"예열 시작/정지", "x":776, "y":400, "w":248, "h":76, "bg":"#737B82", "text":"예열                 ▶", "tx":"#FFFFFF", "fs":24, "align":"center" },
+    { "id":"status_icons", "type":"tile", "label":"히터/송풍기/댐퍼/도어", "x":300, "y":480, "w":472, "h":120, "bg":"#263746", "text":"♨          ◉          ▥          ▯\n히터       송풍기       댐퍼       도어\nOFF       0.0 m/s       0 %       CLOSE", "tx":"#FFFFFF", "fs":15, "align":"center" },
+    { "id":"dry_start", "type":"button", "label":"건조 시작/정지", "x":776, "y":480, "w":248, "h":120, "bg":"#737B82", "text":"건조                 ▶", "tx":"#FFFFFF", "fs":28, "align":"center" }
+  ]
+}

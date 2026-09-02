@@ -1,0 +1,14 @@
+build/
+build_verify/
+.build_diagnostic/
+.build_recovery/
+.pio/
+.platformio/
+.remote_final/
+managed_components/
+sdkconfig.old
+video_frames/
+Microsoft/
+debug.log
+*.pyc
+__pycache__/

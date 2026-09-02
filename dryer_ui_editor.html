@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DY-EP4 UI Layout Editor</title>
+<style>
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{background:#0b1118;color:#d9e4ef;font-family:"Malgun Gothic",sans-serif;overflow:hidden}
+button,input,select,textarea{font:inherit}.app{height:100%;display:grid;grid-template-rows:48px 1fr}.bar{display:flex;align-items:center;gap:7px;padding:7px 10px;background:#101d2a;border-bottom:1px solid #29445c}.bar strong{color:#65c7ff;margin-right:8px}.btn{border:1px solid #35566f;background:#193044;color:#e5f2fb;border-radius:4px;padding:6px 10px;cursor:pointer}.btn:hover{background:#245172}.btn.primary{background:#17643c}.btn.warn{background:#743535}.spacer{flex:1}.status{font-size:12px;color:#91abc0;white-space:nowrap}
+.work{min-height:0;display:grid;grid-template-columns:minmax(540px,1fr) 310px}.viewport{overflow:auto;padding:22px;background:#121923}.stage{position:relative;width:1024px;height:600px;transform-origin:top left;box-shadow:0 0 0 1px #456,0 12px 35px #000;background:#111}.grid{position:absolute;inset:0;pointer-events:none}.element{position:absolute;display:flex;padding:6px;white-space:pre-line;overflow:hidden;user-select:none;cursor:move;line-height:1.25}.element.selected{outline:3px solid #52d4ff;z-index:100!important}.element .tag{display:none;position:absolute;left:2px;top:2px;padding:1px 4px;background:#06131dcc;color:#75dcff;font-size:10px}.element.selected .tag{display:block}.handle{display:none;position:absolute;right:-5px;bottom:-5px;width:12px;height:12px;background:#52d4ff;border:1px solid white;cursor:nwse-resize}.element.selected .handle{display:block}
+.side{min-height:0;background:#101d2a;border-left:1px solid #29445c;display:grid;grid-template-rows:auto 1fr 180px}.side h3{margin:0;padding:10px 12px;font-size:13px;color:#65c7ff;border-bottom:1px solid #29445c}.props{overflow:auto;padding:10px}.empty{color:#71879a;font-size:13px;text-align:center;padding:25px 5px}.row{display:grid;grid-template-columns:72px 1fr;align-items:center;gap:7px;margin-bottom:7px}.row label{font-size:12px;color:#9bb5ca}.row input,.row select,.row textarea{width:100%;min-width:0;background:#14283a;color:white;border:1px solid #35566f;border-radius:3px;padding:5px}.row textarea{height:62px;resize:vertical}.quad{display:grid;grid-template-columns:1fr 1fr;gap:6px}.list{overflow:auto;border-top:1px solid #29445c}.item{padding:5px 10px;font-size:12px;color:#a9bdcc;cursor:pointer;border-bottom:1px solid #172b3c}.item:hover,.item.on{background:#244158;color:white}.hint{font-size:11px;color:#7891a5;padding:7px 10px;border-left:3px solid #d19b32;background:#172330}.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <strong>DY-EP4 UI Editor</strong>
+    <button class="btn primary" id="openBtn">JSON 열기</button><input id="file" type="file" accept="application/json,.json" hidden>
+    <button class="btn" id="saveBtn">JSON 저장</button>
+    <button class="btn" id="addBtn">요소 추가</button><button class="btn" id="copyBtn">복제</button><button class="btn warn" id="delBtn">삭제</button>
+    <label>격자 <select id="grid"><option value="0">없음</option><option value="5">5 px</option><option value="10" selected>10 px</option><option value="20">20 px</option></select></label>
+    <label>배율 <select id="zoom"><option>50</option><option>75</option><option selected>100</option></select>%</label>
+    <span class="spacer"></span><span class="status" id="status">레이아웃 준비 중</span>
+  </header>
+  <main class="work">
+    <section class="viewport" id="viewport"><div class="stage" id="stage"><div class="grid" id="gridLayer"></div></div></section>
+    <aside class="side">
+      <div><h3>선택 요소 속성</h3><div class="hint" id="localHint">같은 폴더의 JSON을 자동으로 읽습니다. 파일로 직접 연 경우에는 ‘JSON 열기’를 누르십시오.</div></div>
+      <div class="props"><div class="empty" id="empty">요소를 선택하세요.</div><div id="form" class="hidden">
+        <div class="row"><label>ID</label><input id="id"></div><div class="row"><label>표시명</label><input id="label"></div><div class="row"><label>종류</label><select id="type"><option>tile</option><option>button</option><option>row</option><option>group</option><option>label</option></select></div>
+        <div class="row"><label>좌표</label><div class="quad"><input id="x" type="number" title="X"><input id="y" type="number" title="Y"></div></div>
+        <div class="row"><label>크기</label><div class="quad"><input id="w" type="number" min="1" title="너비"><input id="h" type="number" min="1" title="높이"></div></div>
+        <div class="row"><label>배경/글자</label><div class="quad"><input id="bg" type="color"><input id="tx" type="color"></div></div>
+        <div class="row"><label>테두리</label><div class="quad"><input id="bd" type="color"><input id="bw" type="number" min="0" max="10"></div></div>
+        <div class="row"><label>모서리</label><input id="r" type="number" min="0" max="80"></div>
+        <div class="row"><label>글자 크기</label><input id="fs" type="number" min="8" max="72"></div>
+        <div class="row"><label>정렬</label><select id="align"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select></div>
+        <div class="row"><label>표시 문자</label><textarea id="text"></textarea></div>
+      </div></div>
+      <div class="list"><h3>요소 목록</h3><div id="items"></div></div>
+    </aside>
+  </main>
+</div>
+<script>
+"use strict";
+const $=id=>document.getElementById(id), stage=$("stage"), fields=["id","label","type","x","y","w","h","bg","tx","bd","bw","r","fs","align","text"];
+let doc={schemaVersion:1,name:"DY-EP4 Main UI",screen:{width:1024,height:600,background:"#111111"},palette:{},elements:[]}, selected=-1, interaction=null, dirty=false;
+const numFields=new Set(["x","y","w","h","bw","r","fs"]), snap=n=>{const g=+$('grid').value;return g?Math.round(n/g)*g:Math.round(n)};
+function normalize(data){
+  if(Array.isArray(data)) data={schemaVersion:1,name:"Imported layout",screen:{width:1024,height:600,background:"#111111"},elements:data};
+  if(!data||!Array.isArray(data.elements)) throw new Error("elements 배열이 없는 JSON입니다.");
+  data.screen={width:1024,height:600,background:"#111111",...(data.screen||{})}; data.palette=data.palette||{};
+  data.elements=data.elements.map((e,i)=>({id:`element_${i+1}`,type:"tile",label:`요소 ${i+1}`,x:0,y:0,w:100,h:60,bg:"#263746",tx:"#FFFFFF",bd:"#000000",bw:0,r:0,text:"",fs:14,align:"center",...e})); return data;
+}
+function render(){stage.style.width=doc.screen.width+'px';stage.style.height=doc.screen.height+'px';stage.style.background=doc.screen.background;stage.querySelectorAll('.element').forEach(e=>e.remove());
+  doc.elements.forEach((e,i)=>{const d=document.createElement('div');d.className='element'+(i===selected?' selected':'');d.dataset.i=i;d.innerHTML=`<span class="tag"></span><span class="content"></span><i class="handle"></i>`;d.querySelector('.tag').textContent=e.label||e.id;d.querySelector('.content').textContent=e.text||'';styleElement(d,e);d.addEventListener('pointerdown',pointerDown);stage.appendChild(d)});renderList();showProps();drawGrid();status();}
+function styleElement(d,e){Object.assign(d.style,{left:e.x+'px',top:e.y+'px',width:e.w+'px',height:e.h+'px',background:e.bg,color:e.tx,border:`${e.bw||0}px solid ${e.bd||'#000'}`,borderRadius:(e.r||0)+'px',fontSize:(e.fs||14)+'px',textAlign:e.align||'center',justifyContent:e.align==='left'?'flex-start':e.align==='right'?'flex-end':'center',alignItems:'center',zIndex:e.type==='group'?1:2});}
+function renderList(){const box=$('items');box.innerHTML='';doc.elements.forEach((e,i)=>{const d=document.createElement('div');d.className='item'+(i===selected?' on':'');d.textContent=`${e.label||e.id}  (${e.x}, ${e.y})`;d.onclick=()=>{selected=i;render()};box.appendChild(d)})}
+function showProps(){const has=selected>=0&&doc.elements[selected];$('empty').classList.toggle('hidden',has);$('form').classList.toggle('hidden',!has);if(!has)return;const e=doc.elements[selected];fields.forEach(k=>$(k).value=e[k]??(numFields.has(k)?0:''));}
+function applyProps(){if(selected<0)return;const e=doc.elements[selected];fields.forEach(k=>e[k]=numFields.has(k)?+$(k).value:$(k).value);e.w=Math.max(1,e.w);e.h=Math.max(1,e.h);dirty=true;render();}
+fields.forEach(k=>$(k).addEventListener(k==='text'?'input':'change',applyProps));
+function pointerDown(ev){ev.preventDefault();const node=ev.currentTarget, i=+node.dataset.i;selected=i;stage.querySelectorAll('.element').forEach((n,j)=>n.classList.toggle('selected',j===i));renderList();showProps();const e=doc.elements[i],resize=ev.target.classList.contains('handle');interaction={id:ev.pointerId,resize,sx:ev.clientX,sy:ev.clientY,x:e.x,y:e.y,w:e.w,h:e.h};node.setPointerCapture(ev.pointerId);node.addEventListener('pointermove',pointerMove);node.addEventListener('pointerup',pointerUp,{once:true})}
+function pointerMove(ev){if(!interaction||selected<0)return;const z=+$('zoom').value/100,dx=(ev.clientX-interaction.sx)/z,dy=(ev.clientY-interaction.sy)/z,e=doc.elements[selected];if(interaction.resize){e.w=Math.max(10,snap(interaction.w+dx));e.h=Math.max(10,snap(interaction.h+dy))}else{e.x=Math.max(0,snap(interaction.x+dx));e.y=Math.max(0,snap(interaction.y+dy))}dirty=true;styleElement(ev.currentTarget,e);status()}
+function pointerUp(){interaction=null;render()}
+function drawGrid(){const g=+$('grid').value,l=$('gridLayer');l.style.backgroundImage=g?`linear-gradient(#ffffff18 1px,transparent 1px),linear-gradient(90deg,#ffffff18 1px,transparent 1px)`:'';l.style.backgroundSize=`${g}px ${g}px`}
+function status(msg){$('status').textContent=msg||`${doc.elements.length}개 요소 · ${doc.screen.width}×${doc.screen.height}${dirty?' · 수정됨':''}`}
+function load(data){doc=normalize(data);selected=-1;dirty=false;render();$('localHint').classList.add('hidden')}
+async function autoLoad(){try{const r=await fetch('dryer_ui_layout.json',{cache:'no-store'});if(!r.ok)throw 0;load(await r.json());status('dryer_ui_layout.json 자동 로드 완료')}catch{render();status('JSON 열기 버튼으로 dryer_ui_layout.json을 선택하세요')}}
+$('openBtn').onclick=()=>$('file').click();$('file').onchange=async e=>{try{load(JSON.parse(await e.target.files[0].text()));status(`${e.target.files[0].name} 로드 완료`)}catch(err){alert('JSON을 열 수 없습니다: '+err.message)}e.target.value=''};
+$('saveBtn').onclick=()=>{const blob=new Blob([JSON.stringify(doc,null,2)+'\n'],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='dryer_ui_layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);dirty=false;status('dryer_ui_layout.json 다운로드 완료')};
+$('addBtn').onclick=()=>{doc.elements.push({id:`element_${Date.now()}`,type:'tile',label:'새 요소',x:20,y:20,w:160,h:80,bg:'#263746',tx:'#FFFFFF',bd:'#536675',bw:1,r:0,text:'새 요소',fs:14,align:'center'});selected=doc.elements.length-1;dirty=true;render()};
+$('copyBtn').onclick=()=>{if(selected<0)return;const e=structuredClone(doc.elements[selected]);e.id+='_copy';e.label+=' 복사';e.x+=10;e.y+=10;doc.elements.push(e);selected=doc.elements.length-1;dirty=true;render()};
+$('delBtn').onclick=()=>{if(selected<0||!confirm('선택 요소를 삭제할까요?'))return;doc.elements.splice(selected,1);selected=-1;dirty=true;render()};
+$('grid').onchange=drawGrid;$('zoom').onchange=()=>{const z=+$('zoom').value/100;stage.style.transform=`scale(${z})`;stage.parentElement.style.minWidth=(doc.screen.width*z+44)+'px';stage.parentElement.style.minHeight=(doc.screen.height*z+44)+'px'};
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});autoLoad();
+</script>
+</body>
+</html>

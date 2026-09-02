@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>DryerApp UI Preview — 1024×600</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#1a1a2e;font-family:'Malgun Gothic',monospace;color:#eee;display:flex;flex-direction:column;align-items:center;padding:16px;gap:10px;}
+h2{font-size:14px;color:#90caf9;letter-spacing:2px;}
+#toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.tb-btn{background:#263238;border:1px solid #455a64;color:#cfd8dc;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;}
+.tb-btn.active,.tb-btn:hover{background:#1565c0;border-color:#42a5f5;color:#fff;}
+#coord-box{background:#0d1b2a;border:1px solid #1e3a58;padding:6px 14px;border-radius:4px;font-size:13px;font-family:monospace;min-width:200px;text-align:center;}
+#canvas-wrap{position:relative;border:2px solid #1e3a58;box-shadow:0 0 30px rgba(0,0,0,.6);}
+canvas{display:block;cursor:crosshair;}
+#hover-info{position:absolute;background:rgba(0,0,0,.85);color:#76ff03;font-size:11px;font-family:monospace;padding:3px 8px;border-radius:3px;pointer-events:none;white-space:nowrap;border:1px solid #76ff03;display:none;}
+#zone-info{background:#0d1b2a;border:1px solid #1e3a58;padding:6px 14px;border-radius:4px;font-size:12px;color:#ffcc02;min-width:300px;text-align:center;}
+#pin-list{background:#0d1b2a;border:1px solid #1e3a58;padding:8px 14px;border-radius:4px;font-size:11px;font-family:monospace;max-height:120px;overflow-y:auto;min-width:400px;}
+#pin-list span{color:#90caf9;}
+</style>
+</head>
+<body>
+<h2>▶ DryerApp UI Preview &nbsp;|&nbsp; 1024×600</h2>
+
+<div id="toolbar">
+  <button class="tb-btn active" onclick="setOverlay('none')">기본</button>
+  <button class="tb-btn" onclick="setOverlay('grid')">그리드 (10px)</button>
+  <button class="tb-btn" onclick="setOverlay('grid50')">그리드 (50px)</button>
+  <button class="tb-btn" onclick="setOverlay('zones')">영역 표시</button>
+  <button class="tb-btn" onclick="clearPins()">핀 지우기</button>
+  <div id="coord-box">X: — &nbsp; Y: — &nbsp; | &nbsp; <span id="zone-label" style="color:#ffcc02">—</span></div>
+</div>
+
+<div id="canvas-wrap">
+  <canvas id="cv" width="1024" height="600"></canvas>
+  <div id="hover-info"></div>
+</div>
+
+<div id="zone-info" id="zone-info">클릭하면 좌표가 고정됩니다</div>
+<div id="pin-list"><span>📌 클릭 좌표 목록:</span> (없음)</div>
+
+<script>
+// ═══════════════════════════════════════
+// Layout constants (must match DryerApp.cpp)
+// ═══════════════════════════════════════
+const SB_H   = 50;   // phone status bar
+const HDR_H  = 130;
+const BODY_Y = 134;
+const BODY_H = 354;
+const BTN_Y  = 492;
+const BTN_H  = 64;
+
+const PROC_CARD_X = 8,  PROC_CARD_W = 120, PROC_CARD_H = 78, PROC_CARD_Y = SB_H+4;
+const HH_X = 290,   HH_Y = SB_H+4;
+const MM_X = 424,   MM_Y = SB_H+4;
+const COLON_X = 410;
+const PROG_X = HH_X, PROG_Y = 118, PROG_W = 248, PROG_H = 8;
+const STATE_X = 900, STATE_Y = SB_H+4, STATE_W = 116, STATE_H = 70;
+const LCOL_X = 8,   LCOL_W = 216, CARD_H = 118;
+const TEMP_Y  = BODY_Y;
+const HUM_Y   = BODY_Y + 122;
+const SETT_Y  = BODY_Y + 244;
+const GRAPH_X = 228, GRAPH_Y = BODY_Y, GRAPH_W = 788, GRAPH_H = BODY_H;
+const SEG_HH_W = 114, SEG_HH_H = 70;
+
+// ═══════════════════════════════════════
+// Colors
+// ═══════════════════════════════════════
+const C = {
+  bg:'#0D1B2A', panel:'#152238', card:'#0A0F16', border:'#2A3F58',
+  white:'#F0F4F8', gray:'#607080', red:'#F44336', green:'#07E000',
+  blue:'#0000F8', orange:'#FF9800', cyan:'#00FFFF', yellow:'#FFFF00',
+  sb:'#38393A'
+};
+
+// ═══════════════════════════════════════
+// Drawing helpers
+// ═══════════════════════════════════════
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+function rect(x,y,w,h,fill,stroke,lw=1,r=0){
+  ctx.beginPath();
+  if(r>0){
+    ctx.roundRect(x,y,w,h,r);
+  } else {
+    ctx.rect(x,y,w,h);
+  }
+  if(fill){ctx.fillStyle=fill;ctx.fill();}
+  if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}
+}
+
+function txt(x,y,str,color,size=12,font='monospace',align='left'){
+  ctx.fillStyle=color; ctx.font=`${size}px ${font}`;
+  ctx.textAlign=align; ctx.textBaseline='top';
+  ctx.fillText(str,x,y);
+}
+
+function seg7(x,y,val,color,cS=3){
+  // Simple 7-seg mockup using rectangles
+  const d = 12*cS+2;
+  const s = val.toString().padStart(2,'0');
+  ctx.fillStyle=color;
+  ctx.font=`bold ${cS*14}px 'Courier New',monospace`;
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText(s,x+2,y+2);
+}
+
+// ═══════════════════════════════════════
+// Main draw
+// ═══════════════════════════════════════
+function draw(){
+  ctx.clearRect(0,0,1024,600);
+
+  // ── Background ──
+  rect(0,0,1024,600,C.bg);
+
+  // ── Phone status bar ──
+  rect(0,0,1024,SB_H,C.sb);
+  txt(1024/2,15,'ESP Brookesia Phone Status Bar (h=50)',C.white,11,'monospace','center');
+
+  // ── Header ──
+  rect(0,SB_H,1024,HDR_H-SB_H,C.panel);
+
+  // Process card
+  rect(PROC_CARD_X,PROC_CARD_Y,PROC_CARD_W,PROC_CARD_H,C.card,C.green,2,8);
+  txt(PROC_CARD_X+PROC_CARD_W/2, PROC_CARD_Y+8, '표준', C.green, 16,'Malgun Gothic','center');
+  txt(PROC_CARD_X+PROC_CARD_W/2, PROC_CARD_Y+40,'건조', C.green, 16,'Malgun Gothic','center');
+
+  // HH canvas
+  rect(HH_X,HH_Y,SEG_HH_W,SEG_HH_H,C.card,'#333',1);
+  ctx.fillStyle=C.red; ctx.font=`bold 44px 'Courier New'`;
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText('03',HH_X+4,HH_Y+4);
+
+  // MM canvas
+  rect(MM_X,MM_Y,SEG_HH_W,SEG_HH_H,C.card,'#333',1);
+  ctx.fillStyle=C.red; ctx.font=`bold 44px 'Courier New'`;
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText('30',MM_X+4,MM_Y+4);
+
+  // Colon dots
+  rect(COLON_X-4,SB_H+18,8,8,C.red);
+  rect(COLON_X-4,SB_H+44,8,8,C.red);
+
+  // Progress bar
+  rect(PROG_X,PROG_Y,PROG_W,PROG_H,C.blue);
+  rect(PROG_X,PROG_Y,PROG_W*0.44,PROG_H,C.red);
+
+  // State card
+  rect(STATE_X,STATE_Y,STATE_W,STATE_H,C.card,C.border,1,8);
+  txt(STATE_X+STATE_W/2,STATE_Y+20,'DRY',C.green,14,'monospace','center');
+  txt(STATE_X+STATE_W/2,STATE_Y+38,'RUN',C.green,14,'monospace','center');
+
+  // Header bottom border
+  ctx.strokeStyle=C.border; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,HDR_H); ctx.lineTo(1024,HDR_H); ctx.stroke();
+
+  // ── Body ──
+  rect(0,BODY_Y,1024,BODY_H,C.panel);
+
+  // Temp card
+  rect(LCOL_X,TEMP_Y,LCOL_W,CARD_H,C.card,C.orange,2,8);
+  txt(LCOL_X+8,TEMP_Y+6,'TEMP',C.orange,11,'monospace');
+  ctx.fillStyle=C.white; ctx.font=`bold 28px 'Courier New'`;
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText('58',LCOL_X+14,TEMP_Y+32);
+  txt(LCOL_X+110,TEMP_Y+40,'°C',C.white,16,'monospace');
+
+  // Hum card
+  rect(LCOL_X,HUM_Y,LCOL_W,CARD_H,C.card,C.cyan,2,8);
+  txt(LCOL_X+8,HUM_Y+6,'HUM',C.cyan,11,'monospace');
+  ctx.fillStyle=C.cyan; ctx.font=`bold 28px 'Courier New'`;
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText('35',LCOL_X+14,HUM_Y+32);
+  txt(LCOL_X+110,HUM_Y+40,'%',C.cyan,16,'monospace');
+
+  // SetTemp card
+  rect(LCOL_X,SETT_Y,LCOL_W,CARD_H,C.card,C.red,2,8);
+  txt(LCOL_X+8,SETT_Y+6,'SET',C.red,11,'monospace');
+  ctx.fillStyle=C.red; ctx.font=`bold 28px 'Courier New'`;
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText('64',LCOL_X+14,SETT_Y+32);
+  txt(LCOL_X+110,SETT_Y+40,'°C',C.red,16,'monospace');
+
+  // Graph area
+  rect(GRAPH_X,GRAPH_Y,GRAPH_W,GRAPH_H,C.card,C.border,1,6);
+  txt(GRAPH_X+8,GRAPH_Y+6,'°C',C.white,11,'monospace');
+  txt(GRAPH_X+GRAPH_W-18,GRAPH_Y+6,'%',C.yellow,11,'monospace');
+  // Mock graph lines
+  ctx.strokeStyle=C.white; ctx.lineWidth=1; ctx.setLineDash([]);
+  ctx.beginPath();
+  for(let i=0;i<50;i++){
+    const gx=GRAPH_X+20+i*(GRAPH_W-40)/50;
+    const t=i<=15?30+34*i/15:64-4*Math.exp(-(i-15)/8);
+    const gy=GRAPH_Y+GRAPH_H-20-Math.round(t/80*(GRAPH_H-40));
+    i===0?ctx.moveTo(gx,gy):ctx.lineTo(gx,gy);
+  }
+  ctx.stroke();
+  ctx.strokeStyle=C.yellow; ctx.lineWidth=1;
+  ctx.beginPath();
+  for(let i=0;i<50;i++){
+    const gx=GRAPH_X+20+i*(GRAPH_W-40)/50;
+    const h=75*Math.exp(-i/20)+15;
+    const gy=GRAPH_Y+GRAPH_H-20-Math.round(h/100*(GRAPH_H-40));
+    i===0?ctx.moveTo(gx,gy):ctx.lineTo(gx,gy);
+  }
+  ctx.stroke();
+
+  // ── Footer / Buttons ──
+  rect(0,BTN_Y,1024,BTN_H,C.panel);
+  ctx.strokeStyle=C.border; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,BTN_Y); ctx.lineTo(1024,BTN_Y); ctx.stroke();
+
+  // Fan/Heater dots
+  rect(4,BTN_Y+8,16,12,null); txt(4,BTN_Y+6,'FAN',C.gray,9,'monospace');
+  rect(12,BTN_Y+26,14,14,'#607080',null,0,7);
+  txt(36,BTN_Y+6,'HTR',C.gray,9,'monospace');
+  rect(44,BTN_Y+26,14,14,'#607080',null,0,7);
+
+  // START button
+  rect(76,BTN_Y+7,220,50,'#1A3A1A',C.border,1,8);
+  txt(76+110,BTN_Y+22,'▶  START',C.white,16,'Malgun Gothic','center');
+
+  // SET button
+  rect(306,BTN_Y+7,180,50,C.card,C.border,1,8);
+  txt(306+90,BTN_Y+22,'☰  SET ⚙',C.white,14,'monospace','center');
+
+  // +10 button
+  rect(496,BTN_Y+7,180,50,'#1A2E50',C.border,1,8);
+  txt(496+90,BTN_Y+22,'+  10min',C.white,14,'monospace','center');
+
+  // -10 button
+  rect(686,BTN_Y+7,180,50,'#2E1A1A',C.border,1,8);
+  txt(686+90,BTN_Y+22,'−  10min',C.white,14,'monospace','center');
+
+  // Status text
+  txt(878,BTN_Y+20,'58°C / 35%',C.gray,12,'monospace');
+
+  // ── Overlay ──
+  drawOverlay();
+
+  // ── Pins ──
+  drawPins();
+}
+
+// ═══════════════════════════════════════
+// Overlay
+// ═══════════════════════════════════════
+let overlay='none';
+function setOverlay(o){
+  overlay=o;
+  document.querySelectorAll('.tb-btn').forEach(b=>{
+    b.classList.toggle('active', b.textContent.includes(
+      o==='none'?'기본':o==='grid'?'10':o==='grid50'?'50':'영역'));
+  });
+  draw();
+}
+
+function drawOverlay(){
+  if(overlay==='grid'||overlay==='grid50'){
+    const step=overlay==='grid'?10:50;
+    ctx.strokeStyle=overlay==='grid'?'rgba(255,255,255,0.08)':'rgba(33,150,243,0.25)';
+    ctx.lineWidth=1; ctx.setLineDash([]);
+    for(let x=0;x<1024;x+=step){
+      ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,600);ctx.stroke();
+    }
+    for(let y=0;y<600;y+=step){
+      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(1024,y);ctx.stroke();
+    }
+    if(overlay==='grid50'){
+      ctx.fillStyle='rgba(33,150,243,0.5)';ctx.font='9px monospace';ctx.textAlign='left';
+      for(let x=0;x<1024;x+=50) for(let y=0;y<600;y+=50){
+        ctx.fillText(`${x},${y}`,x+1,y+1);
+      }
+    }
+  }
+  if(overlay==='zones'){
+    const zones=[
+      {x:0,y:0,w:1024,h:SB_H,label:'Phone StatusBar',c:'rgba(255,152,0,0.15)',lc:'#FF9800'},
+      {x:0,y:SB_H,w:1024,h:HDR_H-SB_H,label:'Header',c:'rgba(33,150,243,0.1)',lc:'#2196F3'},
+      {x:LCOL_X,y:BODY_Y,w:LCOL_W,h:BODY_H,label:'Left Cards',c:'rgba(76,175,80,0.1)',lc:'#4CAF50'},
+      {x:GRAPH_X,y:GRAPH_Y,w:GRAPH_W,h:GRAPH_H,label:'Graph',c:'rgba(0,188,212,0.1)',lc:'#00BCD4'},
+      {x:0,y:BTN_Y,w:1024,h:BTN_H,label:'Footer/Buttons',c:'rgba(244,67,54,0.1)',lc:'#F44336'},
+    ];
+    zones.forEach(z=>{
+      ctx.fillStyle=z.c; ctx.fillRect(z.x,z.y,z.w,z.h);
+      ctx.strokeStyle=z.lc; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+      ctx.strokeRect(z.x+0.5,z.y+0.5,z.w-1,z.h-1);
+      ctx.setLineDash([]);
+      ctx.fillStyle=z.lc; ctx.font='bold 11px monospace'; ctx.textAlign='left';
+      ctx.fillText(`${z.label}  (${z.x},${z.y})  ${z.w}×${z.h}`,z.x+4,z.y+4);
+    });
+  }
+}
+
+// ═══════════════════════════════════════
+// Pins (click to mark)
+// ═══════════════════════════════════════
+let pins=[];
+function drawPins(){
+  pins.forEach((p,i)=>{
+    ctx.strokeStyle='#76ff03'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(p.x-8,p.y); ctx.lineTo(p.x+8,p.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(p.x,p.y-8); ctx.lineTo(p.x,p.y+8); ctx.stroke();
+    ctx.strokeStyle='#76ff03'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle='rgba(118,255,3,0.9)'; ctx.font='10px monospace'; ctx.textAlign='left';
+    ctx.fillText(`${i+1}:(${p.x},${p.y})`,p.x+6,p.y-4);
+  });
+}
+function clearPins(){ pins=[]; updatePinList(); draw(); }
+function updatePinList(){
+  const el=document.getElementById('pin-list');
+  if(pins.length===0){el.innerHTML='<span>📌 클릭 좌표 목록:</span> (없음)';return;}
+  el.innerHTML='<span>📌 클릭 좌표 목록:</span><br>'+pins.map((p,i)=>`  ${i+1}: x=${p.x}, y=${p.y}`).join('<br>');
+}
+
+// ═══════════════════════════════════════
+// Zone detection
+// ═══════════════════════════════════════
+function detectZone(x,y){
+  if(y<SB_H) return 'Phone StatusBar';
+  if(y<HDR_H){
+    if(x>=PROC_CARD_X&&x<=PROC_CARD_X+PROC_CARD_W&&y>=PROC_CARD_Y&&y<=PROC_CARD_Y+PROC_CARD_H) return 'ProcessCard';
+    if(x>=HH_X&&x<=HH_X+SEG_HH_W&&y>=HH_Y&&y<=HH_Y+SEG_HH_H) return 'HH 7seg';
+    if(x>=MM_X&&x<=MM_X+SEG_HH_W&&y>=MM_Y&&y<=MM_Y+SEG_HH_H) return 'MM 7seg';
+    if(x>=PROG_X&&x<=PROG_X+PROG_W&&y>=PROG_Y&&y<=PROG_Y+PROG_H) return 'ProgressBar';
+    if(x>=STATE_X&&x<=STATE_X+STATE_W&&y>=STATE_Y&&y<=STATE_Y+STATE_H) return 'StateCard';
+    return 'Header';
+  }
+  if(y<BODY_Y+BODY_H){
+    if(x<LCOL_X+LCOL_W){
+      if(y<TEMP_Y+CARD_H) return 'TempCard';
+      if(y<HUM_Y+CARD_H)  return 'HumCard';
+      return 'SetTempCard';
+    }
+    return 'Graph';
+  }
+  if(y>=BTN_Y){
+    if(x>=76&&x<=296)   return 'Btn:START';
+    if(x>=306&&x<=486)  return 'Btn:SET';
+    if(x>=496&&x<=676)  return 'Btn:+10min';
+    if(x>=686&&x<=866)  return 'Btn:-10min';
+    return 'Footer';
+  }
+  return '—';
+}
+
+// ═══════════════════════════════════════
+// Mouse events
+// ═══════════════════════════════════════
+const wrap = document.getElementById('canvas-wrap');
+const hoverEl = document.getElementById('hover-info');
+const coordBox = document.getElementById('coord-box');
+const zoneInfo = document.getElementById('zone-info');
+
+cv.addEventListener('mousemove',e=>{
+  const r=cv.getBoundingClientRect();
+  const sx=cv.width/r.width, sy=cv.height/r.height;
+  const x=Math.round((e.clientX-r.left)*sx);
+  const y=Math.round((e.clientY-r.top)*sy);
+  const zone=detectZone(x,y);
+  coordBox.innerHTML=`X: <b>${x}</b> &nbsp; Y: <b>${y}</b> &nbsp;|&nbsp; <span style="color:#ffcc02">${zone}</span>`;
+  hoverEl.style.display='block';
+  hoverEl.style.left=(e.clientX-r.left+14)+'px';
+  hoverEl.style.top=(e.clientY-r.top-20)+'px';
+  hoverEl.textContent=`(${x}, ${y})`;
+  zoneInfo.textContent=`현재 위치: ${zone}  |  x=${x}, y=${y}`;
+});
+
+cv.addEventListener('mouseleave',()=>{
+  hoverEl.style.display='none';
+  coordBox.innerHTML='X: — &nbsp; Y: —';
+});
+
+cv.addEventListener('click',e=>{
+  const r=cv.getBoundingClientRect();
+  const sx=cv.width/r.width, sy=cv.height/r.height;
+  const x=Math.round((e.clientX-r.left)*sx);
+  const y=Math.round((e.clientY-r.top)*sy);
+  pins.push({x,y});
+  updatePinList();
+  draw();
+});
+
+// Init
+draw();
+</script>
+</body>
+</html>
