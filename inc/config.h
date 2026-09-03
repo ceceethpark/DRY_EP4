@@ -3,8 +3,8 @@
 /* Hardware pin map (single source of truth) */
 #define HW_BUZZER_GPIO                  1
 #define HW_DOOR_SENSOR_GPIO             2
-#define HW_RELAY_HEATER_GPIO            5
-#define HW_RELAY_FAN_GPIO               3
+#define HW_RELAY_HEATER_GPIO            3
+#define HW_RELAY_FAN_GPIO               5
 #define HW_FAN_CURRENT_ADC_GPIO         20
 #define HW_RELAY_DAMPER_GPIO            47
 #define HW_RS485_TX_GPIO                26

@@ -12,6 +12,7 @@
 #include "WiredNetwork.hpp"
 #include "RS485Sensor.hpp"
 #include "LoadCell.hpp"
+#include "OtaService.hpp"
 
 namespace {
 constexpr const char *TAG = "DY-EP4";
@@ -19,6 +20,7 @@ DryerApp g_dryer;
 WiredNetwork g_network;
 RS485Sensor g_rs485Sensors;
 LoadCell g_loadCell;
+OtaService g_otaService;
 
 void networkReady(void *context)
 {
@@ -34,6 +36,9 @@ void networkReady(void *context)
         ESP_LOGW(TAG, "NTP initialization failed: %s", esp_err_to_name(ntpErr));
     }
     ESP_LOGI(TAG, "Network ready: starting MQTT");
+    if (!g_otaService.start()) {
+        ESP_LOGE(TAG, "EP6 OTA service start failed");
+    }
     if (!dryer->startCommunication()) {
         ESP_LOGE(TAG, "MQTT client start failed");
     }
