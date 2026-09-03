@@ -10,12 +10,12 @@
 #define MODBUS_MONITOR_FIRST_ADDRESS  101
 #define MODBUS_MONITOR_LAST_ADDRESS   106
 #define MODBUS_LOAD_CELL_ADDRESS         1  /* AD500A factory device number 01 */
-#define MODBUS_LOAD_CELL_WEIGHT_REG      0  /* AD500A input register 1, PDU address 0 */
+#define MODBUS_LOAD_CELL_WEIGHT_REG      0  /* Input register 30001 uses PDU offset 0 */
 
 /* Application-wide limits */
 #define DRYER_SENSOR_COUNT               7
 #define DRYER_MONITOR_COUNT              6
-#define DRYER_SETTING_COUNT              14
+#define DRYER_SETTING_COUNT              20
 
 /* Dryer operating state shared by all application components. */
 typedef enum {
@@ -34,7 +34,7 @@ typedef struct {
 
 typedef struct {
     int32_t raw;
-    float weight_g;
+    int32_t weight_g;
     TickType_t updated_at;
     bool valid;
 } LoadCellReading;
@@ -121,6 +121,10 @@ typedef struct {
     int32_t preheat_time_min;
     int32_t preheat_remain_min;
     uint8_t preheat_active;
+    uint8_t dry_state;
+    uint8_t standby_active;
+    int32_t cooling_remain_min;
+    int32_t tare_weight_g;
 } DryerNvsRuntime;
 
 typedef struct {
@@ -147,4 +151,12 @@ typedef struct {
     int32_t http_server_ip3;
     int32_t http_server_ip4;
     int32_t http_server_port;
+    /* Appended for binary-compatible migration from the original EP4 blob. */
+    int32_t preheat_temp_c;
+    int32_t preheat_time_min;
+    int32_t standby_enabled;
+    int32_t standby_time_min;
+    int32_t standby_temp_c;
+    /* Appended so settings saved by the previous EP4 firmware still migrate. */
+    int32_t fan_min_speed_ms;
 } DryerNvsCoolingSettings;

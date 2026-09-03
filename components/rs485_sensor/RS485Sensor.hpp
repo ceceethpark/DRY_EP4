@@ -57,6 +57,9 @@ public:
     // Direct address lookup for addresses 100..106.
     bool reading(uint8_t slaveAddress, Reading &out) const;
     void setLoadCell(LoadCell *loadCell) { loadCell_ = loadCell; }
+    bool requestLoadCellZero();
+    bool requestLoadCellTare();
+    bool requestLoadCellClearTare();
     uint8_t controlFailureCount() const;
     uint8_t loadCellFailureCount() const;
 
@@ -65,6 +68,7 @@ private:
     void pollLoop();
     esp_err_t poll(uint8_t slaveAddress, Reading &out);
     esp_err_t pollLoadCell();
+    esp_err_t writeLoadCellCoil(uint16_t coilAddress);
     static uint16_t crc16(const uint8_t *data, size_t length);
 
     mutable SemaphoreHandle_t mutex_ = nullptr;
@@ -74,4 +78,5 @@ private:
     LoadCell *loadCell_ = nullptr;
     uint8_t controlFailureCount_ = 0;
     uint8_t loadCellFailureCount_ = 0;
+    uint8_t pendingLoadCellCommands_ = 0;
 };

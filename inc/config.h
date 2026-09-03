@@ -3,8 +3,8 @@
 /* Hardware pin map (single source of truth) */
 #define HW_BUZZER_GPIO                  1
 #define HW_DOOR_SENSOR_GPIO             2
-#define HW_RELAY_HEATER_GPIO            3
-#define HW_RELAY_FAN_GPIO               5
+#define HW_RELAY_HEATER_GPIO            5
+#define HW_RELAY_FAN_GPIO               3
 #define HW_FAN_CURRENT_ADC_GPIO         20
 #define HW_RELAY_DAMPER_GPIO            47
 #define HW_RS485_TX_GPIO                26
@@ -42,6 +42,12 @@
 #define DRYER_CFG_DEFAULT_MIN_TEMP_RISE_C_PER_MIN     15
 #define DRYER_CFG_DEFAULT_FAN_ADC_AT_10MS            1135
 #define DRYER_CFG_DEFAULT_MQTT_PUBLISH_INTERVAL_MIN    5
+#define DRYER_CFG_DEFAULT_PREHEAT_TEMP_C               50
+#define DRYER_CFG_DEFAULT_PREHEAT_TIME_MIN             30
+#define DRYER_CFG_DEFAULT_STANDBY_ENABLED                1
+#define DRYER_CFG_DEFAULT_STANDBY_TIME_MIN              30
+#define DRYER_CFG_DEFAULT_STANDBY_TEMP_C                40
+#define DRYER_CFG_DEFAULT_FAN_MIN_SPEED_MS                5
 
 /* Dryer setting validation limits */
 #define DRYER_CFG_TEMP_MIN_C                          10
@@ -64,6 +70,13 @@
 #define DRYER_CFG_FAN_ADC_AT_10MS_MAX                4095
 #define DRYER_CFG_MQTT_PUBLISH_INTERVAL_MIN             1
 #define DRYER_CFG_MQTT_PUBLISH_INTERVAL_MAX          1440
+#define DRYER_CFG_PREHEAT_TIME_MIN_MAX                120
+#define DRYER_CFG_PREHEAT_TEMP_MIN_C                    0
+#define DRYER_CFG_STANDBY_TEMP_MIN_C                    0
+#define DRYER_CFG_STANDBY_MODE_MIN                       0
+#define DRYER_CFG_STANDBY_MODE_MAX                       2
+#define DRYER_CFG_FAN_MIN_SPEED_MS_MIN                    0
+#define DRYER_CFG_FAN_MIN_SPEED_MS_MAX                   15
 #define EQUIPMENT_ID_MIN                            100000
 #define EQUIPMENT_ID_MAX                            999999
 

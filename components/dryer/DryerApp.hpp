@@ -52,7 +52,7 @@ public:
     /* Hook for real hardware sensor task */
     void updateSensors(float temp_c, float hum_pct, float set_temp_c);
     void updateMachineInputs(bool door_open, float blower_speed_ms,
-                             float weight_g, float damper_percent);
+                             int32_t weight_g, float damper_percent);
 
 private:
     /* ── Screen roots ────────────────────────────────── */
@@ -62,6 +62,8 @@ private:
     lv_obj_t *_scr_weight_cal;
     lv_obj_t *_scr_cooling;
     lv_obj_t *_error_popup_overlay;
+    lv_obj_t *_notice_popup_overlay;
+    lv_timer_t *_notice_popup_timer;
 
     /* ── Main · header live-value labels ────────────── */
     lv_obj_t *_lbl_hdr_dry_temp;   /* CUR TEMP value        */
@@ -71,7 +73,7 @@ private:
     lv_obj_t *_lbl_rem_disp;       /* remainTime HH:MM disp */
     lv_obj_t *_canvas_pre_remain;
     lv_obj_t *_canvas_rem_time;
-    lv_obj_t *_state_card;         /* state border card     */
+    lv_obj_t *_state_card;         /* transparent Korean state title */
     lv_obj_t *_lbl_state;          /* PREPARE/PREHEAT/RUN…  */
     lv_obj_t *_lbl_messenger;      /* latest server control history */
 
@@ -105,7 +107,9 @@ private:
     lv_obj_t *_lbl_sen_4;
     lv_obj_t *_lbl_sen_5;
     lv_obj_t *_lbl_sen_6;
-    lv_obj_t *_lbl_weight;     /* WEIGHT sensor value      */
+    lv_obj_t *_lbl_weight;       /* net weight value          */
+    lv_obj_t *_lbl_weight_gross; /* gross weight value        */
+    lv_obj_t *_lbl_weight_tare;  /* tare/container value      */
     lv_obj_t *_lbl_door;
     lv_obj_t *_lbl_fan_rate;
     lv_obj_t *_lbl_dryness;
@@ -181,6 +185,9 @@ private:
     TimeCtx _ctx_pt_up, _ctx_pt_dn, _ctx_dt_up, _ctx_dt_dn;
     bool  _fan_on;
     bool  _heater_on;
+    bool  _standby_mode_active;
+    uint32_t _heater_enable_after_ms;
+    uint32_t _fan_disable_after_ms;
     bool  _fan_icon_state_valid;
     bool  _fan_icon_last_on;
     bool  _footer_icon_state_valid;
@@ -206,7 +213,8 @@ private:
 
     /* ── 3 sensor pairs: [0]=외기, [1]=내부, [2]=출구 ──────────── */
     SensorPair _sensors[6];
-    float      _weight_g;      /* weight sensor (grams)            */
+    int32_t    _weight_g;      /* signed weight in whole grams     */
+    int32_t    _tare_weight_g; /* saved tare/container grams       */
     int        _weight_reference_g;
     LoadCellCalibration _weight_cal_backup;
 
@@ -265,6 +273,7 @@ private:
     void refreshHeader(void);
     void refreshCards(void);
     void refreshFooter(void);
+    void refreshProgressCard(void);
     void refreshProcSelect(void);
 
     /* Capture all physical sensors into one shared snapshot. */
@@ -272,17 +281,24 @@ private:
     void errorCheck(void);
     void processAlarmEvent(uint8_t bit, bool active);
     void showErrorPopup(const char *title, const char *line1, const char *line2);
+    void showNoticePopup(const char *message);
     void applyActuatorSafetyChecks(void);
     void writeActuatorOutputs(void);
     bool processMqttCommands(void);
 
     /* ── Business-logic helpers ──────────────────────── */
     void doStartStop(void);
+    void doProgress(void);
+    void startDrying(void);
+    void startDryingFromAdjustedTime(void);
+    void enterStandby(void);
+    void startCooling(void);
+    void finishCycle(void);
     void doApplyProc(void);
     void applyProcActive(void);
     void doPreheatStart(void);
     void doPreheatStop(void);
-    void doCycleDamper(void);   /* AUTO -> OPEN -> CLOSE -> AUTO */
+    void doCycleDamper(void);   /* CLOSE(0%) -> AUTO -> OPEN(100%) -> CLOSE */
     void saveRuntimeState(void);
     void restoreRuntimeState(void);
 
@@ -334,6 +350,10 @@ private:
     static void cbCoolingSaveExit(lv_event_t *e);
     static void cbCoolingExit(lv_event_t *e);
     static void cbBtnDamper(lv_event_t *e);
+    static void cbLoadCellZero(lv_event_t *e);
+    static void cbLoadCellTareReset(lv_event_t *e);
+    static void cbLoadCellTare(lv_event_t *e);
+    static void cbNoticePopupTimer(lv_timer_t *timer);
     static void cbProcNext(lv_event_t *e);
     static void cbProcApply(lv_event_t *e);
 };

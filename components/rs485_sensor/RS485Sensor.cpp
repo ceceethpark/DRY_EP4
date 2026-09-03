@@ -116,6 +116,33 @@ uint8_t RS485Sensor::loadCellFailureCount() const
     return result;
 }
 
+bool RS485Sensor::requestLoadCellZero()
+{
+    if (mutex_ == nullptr || xSemaphoreTake(mutex_, pdMS_TO_TICKS(20)) != pdTRUE) return false;
+    pendingLoadCellCommands_ |= 0x01;
+    xSemaphoreGive(mutex_);
+    if (task_ != nullptr) xTaskNotifyGive(task_);
+    return true;
+}
+
+bool RS485Sensor::requestLoadCellTare()
+{
+    if (mutex_ == nullptr || xSemaphoreTake(mutex_, pdMS_TO_TICKS(20)) != pdTRUE) return false;
+    pendingLoadCellCommands_ |= 0x02;
+    xSemaphoreGive(mutex_);
+    if (task_ != nullptr) xTaskNotifyGive(task_);
+    return true;
+}
+
+bool RS485Sensor::requestLoadCellClearTare()
+{
+    if (mutex_ == nullptr || xSemaphoreTake(mutex_, pdMS_TO_TICKS(20)) != pdTRUE) return false;
+    pendingLoadCellCommands_ |= 0x04;
+    xSemaphoreGive(mutex_);
+    if (task_ != nullptr) xTaskNotifyGive(task_);
+    return true;
+}
+
 void RS485Sensor::taskEntry(void *context)
 {
     static_cast<RS485Sensor *>(context)->pollLoop();
@@ -145,6 +172,25 @@ void RS485Sensor::pollLoop()
             }
         }
         if (!stopRequested_ && loadCell_ != nullptr) {
+            uint8_t commands = 0;
+            if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
+                commands = pendingLoadCellCommands_;
+                pendingLoadCellCommands_ = 0;
+                xSemaphoreGive(mutex_);
+            }
+            if ((commands & 0x01) != 0) {
+                const esp_err_t commandErr = writeLoadCellCoil(0);
+                ESP_LOGI(kTag, "AD500A ZERO command: %s", esp_err_to_name(commandErr));
+            }
+            if ((commands & 0x02) != 0) {
+                const esp_err_t commandErr = writeLoadCellCoil(1);
+                ESP_LOGI(kTag, "AD500A TARE command: %s", esp_err_to_name(commandErr));
+            }
+            if ((commands & 0x04) != 0) {
+                const esp_err_t commandErr = writeLoadCellCoil(2);
+                ESP_LOGI(kTag, "AD500A CLEAR TARE/GROSS command: %s",
+                         esp_err_to_name(commandErr));
+            }
             const esp_err_t err = pollLoadCell();
             if (err != ESP_OK) {
                 ESP_LOGW(kTag, "load cell slave %u: %s",
@@ -171,8 +217,8 @@ esp_err_t RS485Sensor::pollLoadCell()
         ~RestoreParity() { uart_set_parity(kUart, UART_PARITY_DISABLE); }
     } restoreParity;
     const uint8_t address = LoadCell::kModbusSlaveAddress;
-    /* AD500A input registers 1..4 (PDU 0..3): decimal position, unit,
-       and signed 32-bit displayed weight. */
+    /* AD500A input registers 1..4: decimal position, unit, and signed
+       32-bit displayed weight. Modbus register 30001 is PDU offset 0. */
     const uint16_t reg = LoadCell::kWeightRegister;
     uint8_t request[8] = {address, 0x04,
                           static_cast<uint8_t>(reg >> 8), static_cast<uint8_t>(reg),
@@ -192,14 +238,59 @@ esp_err_t RS485Sensor::pollLoadCell()
     if (crc16(response, 11) != receivedCrc) return ESP_ERR_INVALID_CRC;
     const uint16_t decimalPosition=(static_cast<uint16_t>(response[3])<<8)|response[4];
     const uint16_t unit=(static_cast<uint16_t>(response[5])<<8)|response[6];
-    const uint32_t rawUnsigned=(static_cast<uint32_t>(response[7])<<24)|
-        (static_cast<uint32_t>(response[8])<<16)|(static_cast<uint32_t>(response[9])<<8)|response[10];
+    /* CAS/A&D indicators transmit a 32-bit value low-word first. Each
+       individual 16-bit register remains in normal Modbus big-endian order. */
+    const uint16_t lowWord = (static_cast<uint16_t>(response[7]) << 8) | response[8];
+    const uint16_t highWord = (static_cast<uint16_t>(response[9]) << 8) | response[10];
+    const uint32_t rawUnsigned = (static_cast<uint32_t>(highWord) << 16) | lowWord;
     if(decimalPosition>5||unit>2)return ESP_ERR_INVALID_RESPONSE;
-    float weight=static_cast<float>(static_cast<int32_t>(rawUnsigned));
-    for(uint16_t i=0;i<decimalPosition;i++)weight*=0.1F;
-    const float grams=unit==0?weight*1000.0F:unit==1?weight:weight*1000000.0F;
-    loadCell_->updateIndicatorWeight(static_cast<int32_t>(rawUnsigned),grams,xTaskGetTickCount());
+    static bool firstReadingLogged = false;
+    if (!firstReadingLogged) {
+        ESP_LOGI(kTag, "AD500A decimal=%u unit=%u low=0x%04X high=0x%04X value=%" PRId32,
+                 decimalPosition, unit, lowWord, highWord,
+                 static_cast<int32_t>(rawUnsigned));
+        firstReadingLogged = true;
+    }
+    const int32_t displayedWeight = static_cast<int32_t>(rawUnsigned);
+    int64_t divisor = 1;
+    for (uint16_t i = 0; i < decimalPosition; ++i) divisor *= 10;
+    const int64_t unitMultiplier = unit == 0 ? 1000LL :
+                                   unit == 1 ? 1LL : 1000000LL;
+    const int64_t numerator = static_cast<int64_t>(displayedWeight) * unitMultiplier;
+    const int64_t roundedGrams = numerator >= 0
+        ? (numerator + divisor / 2) / divisor
+        : (numerator - divisor / 2) / divisor;
+    const int32_t grams = roundedGrams > INT32_MAX ? INT32_MAX :
+                          roundedGrams < INT32_MIN ? INT32_MIN :
+                          static_cast<int32_t>(roundedGrams);
+    loadCell_->updateIndicatorWeight(displayedWeight, grams, xTaskGetTickCount());
     return ESP_OK;
+}
+
+esp_err_t RS485Sensor::writeLoadCellCoil(uint16_t coilAddress)
+{
+    if (uart_set_parity(kUart, UART_PARITY_EVEN) != ESP_OK) return ESP_FAIL;
+    struct RestoreParity {
+        ~RestoreParity() { uart_set_parity(kUart, UART_PARITY_DISABLE); }
+    } restoreParity;
+    uint8_t frame[8] = {LoadCell::kModbusSlaveAddress, 0x05,
+                        static_cast<uint8_t>(coilAddress >> 8),
+                        static_cast<uint8_t>(coilAddress),
+                        0xFF, 0x00, 0, 0};
+    const uint16_t crc = crc16(frame, 6);
+    frame[6] = static_cast<uint8_t>(crc);
+    frame[7] = static_cast<uint8_t>(crc >> 8);
+    uart_flush_input(kUart);
+    if (uart_write_bytes(kUart, frame, sizeof(frame)) != sizeof(frame)) return ESP_FAIL;
+    if (uart_wait_tx_done(kUart, pdMS_TO_TICKS(100)) != ESP_OK) return ESP_ERR_TIMEOUT;
+    uint8_t response[8]{};
+    const int received = uart_read_bytes(kUart, response, sizeof(response), kResponseTimeout);
+    if (received != sizeof(response)) return ESP_ERR_TIMEOUT;
+    for (size_t i = 0; i < 6; ++i) {
+        if (response[i] != frame[i]) return ESP_ERR_INVALID_RESPONSE;
+    }
+    const uint16_t responseCrc = response[6] | (static_cast<uint16_t>(response[7]) << 8);
+    return crc16(response, 6) == responseCrc ? ESP_OK : ESP_ERR_INVALID_CRC;
 }
 
 esp_err_t RS485Sensor::poll(uint8_t address, Reading &out)

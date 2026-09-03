@@ -377,7 +377,7 @@ bool MqttClient::publishTelemetry(const DryerSensorValues &values)
     }
 
     const int written = snprintf(payload + used, sizeof(payload) - used,
-        "},\"loadCell\":{\"raw\":%" PRId32 ",\"weightG\":%.2f,\"valid\":%s},"
+        "},\"loadCell\":{\"raw\":%" PRId32 ",\"weightG\":%" PRId32 ",\"valid\":%s},"
         "\"fanVelocity\":{\"raw\":%d,\"constant\":%" PRId32 ",\"velocity\":%.2f,\"valid\":%s},"
         "\"door\":{\"rawLevel\":%d,\"open\":%s,\"valid\":%s},"
         "\"event\":{\"data\":%u,\"doorOpen\":%s,\"controlSensorError\":%s,"
@@ -390,7 +390,7 @@ bool MqttClient::publishTelemetry(const DryerSensorValues &values)
         "\"targetTemperatureC\":%.1f,"
         "\"operatingState\":%d,\"operatingStateName\":\"%s\","
         "\"damperPercent\":%.1f}",
-        values.load_cell.raw, static_cast<double>(values.load_cell.weight_g),
+        values.load_cell.raw, values.load_cell.weight_g,
         values.load_cell.valid ? "true" : "false", values.fan_velocity.raw,
         values.fan_velocity.reference_adc, static_cast<double>(values.fan_velocity.velocity_ms),
         values.fan_velocity.valid ? "true" : "false", values.door.raw_level,

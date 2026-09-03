@@ -135,7 +135,7 @@ dependencies:
   idf:
     source:
       type: idf
-    version: 5.5.5
+    version: 5.5.3
   lvgl/lvgl:
     dependencies: []
     source:

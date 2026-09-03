@@ -11,7 +11,7 @@ void LoadCell::updateRaw(int32_t raw, TickType_t updated_at)
     taskEXIT_CRITICAL(&lock_);
 }
 
-void LoadCell::updateIndicatorWeight(int32_t raw, float weight_g,
+void LoadCell::updateIndicatorWeight(int32_t raw, int32_t weight_g,
                                      TickType_t updated_at)
 {
     taskENTER_CRITICAL(&lock_);
@@ -71,11 +71,14 @@ LoadCellCalibration LoadCell::calibration() const
     return result;
 }
 
-float LoadCell::calculateWeight(int32_t raw) const
+int32_t LoadCell::calculateWeight(int32_t raw) const
 {
     const int32_t counts = calibration_.span_raw - calibration_.zero_raw;
-    if (counts == 0 || calibration_.reference_weight_deci_g <= 0) return 0.0f;
-    return static_cast<float>(raw - calibration_.zero_raw) *
-           (calibration_.reference_weight_deci_g / 10.0f) /
-           static_cast<float>(counts);
+    if (counts == 0 || calibration_.reference_weight_deci_g <= 0) return 0;
+    const double grams = static_cast<double>(raw - calibration_.zero_raw) *
+                         calibration_.reference_weight_deci_g /
+                         (10.0 * static_cast<double>(counts));
+    if (grams <= INT32_MIN) return INT32_MIN;
+    if (grams >= INT32_MAX) return INT32_MAX;
+    return static_cast<int32_t>(std::lround(grams));
 }

@@ -10,7 +10,7 @@ public:
     static constexpr uint16_t kWeightRegister = MODBUS_LOAD_CELL_WEIGHT_REG;
 
     void updateRaw(int32_t raw, TickType_t updated_at);
-    void updateIndicatorWeight(int32_t raw, float weight_g, TickType_t updated_at);
+    void updateIndicatorWeight(int32_t raw, int32_t weight_g, TickType_t updated_at);
     LoadCellReading reading() const;
 
     void tare();
@@ -19,12 +19,12 @@ public:
     LoadCellCalibration calibration() const;
 
 private:
-    float calculateWeight(int32_t raw) const;
+    int32_t calculateWeight(int32_t raw) const;
     mutable portMUX_TYPE lock_ = portMUX_INITIALIZER_UNLOCKED;
     int32_t raw_ = 0;
     TickType_t updated_at_ = 0;
     bool valid_ = false;
     bool indicatorWeightValid_ = false;
-    float indicatorWeightG_ = 0.0F;
+    int32_t indicatorWeightG_ = 0;
     LoadCellCalibration calibration_{};
 };
