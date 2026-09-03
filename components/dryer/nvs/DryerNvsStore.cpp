@@ -12,6 +12,7 @@ constexpr const char *RUNTIME_NS = "dryer";
 constexpr const char *CALIBRATION_NS = "sensor_cal";
 constexpr const char *LOAD_CELL_NS = "load_cell";
 constexpr const char *COOLING_NS = "cooling_cfg";
+constexpr int32_t COOLING_VERSION = 3;
 constexpr int32_t RUNTIME_VERSION = 3;
 constexpr int32_t CALIBRATION_VERSION = 1;
 constexpr const char *EQUIPMENT_NS = "equipment";
@@ -75,6 +76,7 @@ bool DryerNvsStore::saveCoolingSettings(const DryerNvsCoolingSettings &v) const
     esp_err_t err = nvs_open(COOLING_NS, NVS_READWRITE, &h);
     if (err != ESP_OK) return false;
     err = nvs_set_blob(h, "settings", &v, sizeof(v));
+    if (err == ESP_OK) err = nvs_set_i32(h, "version", COOLING_VERSION);
     if (err == ESP_OK) err = nvs_commit(h);
     nvs_close(h);
     return err == ESP_OK;
@@ -86,6 +88,8 @@ bool DryerNvsStore::loadCoolingSettings(DryerNvsCoolingSettings *v) const
     nvs_handle_t h;
     esp_err_t err = nvs_open(COOLING_NS, NVS_READONLY, &h);
     if (err != ESP_OK) return false;
+    int32_t version=1;
+    if(nvs_get_i32(h,"version",&version)!=ESP_OK) version=1;
     DryerNvsCoolingSettings loaded{};
     loaded.fan_min_speed_ms=DRYER_CFG_DEFAULT_FAN_MIN_SPEED_MS;
     size_t storedSize=0;
@@ -105,6 +109,10 @@ bool DryerNvsStore::loadCoolingSettings(DryerNvsCoolingSettings *v) const
     } else if(err==ESP_OK) {
         err=ESP_ERR_INVALID_SIZE;
     }
+    /* Migrate former factory calibrations to the new 10 m/s ADC value. */
+    if(err==ESP_OK && version<COOLING_VERSION &&
+       (loaded.fan_adc_at_10ms==1135 || loaded.fan_adc_at_10ms==4096))
+        loaded.fan_adc_at_10ms=DRYER_CFG_DEFAULT_FAN_ADC_AT_10MS;
     nvs_close(h);
     if (err != ESP_OK || loaded.dry_temp_c<DRYER_CFG_TEMP_MIN_C || loaded.dry_temp_c>DRYER_CFG_TEMP_MAX_C ||
         loaded.dry_time_min<DRYER_CFG_TIME_MIN_MIN || loaded.dry_time_min>DRYER_CFG_TIME_MIN_MAX || loaded.temp_hysteresis_c<DRYER_CFG_TEMP_HYSTERESIS_MIN_C || loaded.temp_hysteresis_c>DRYER_CFG_TEMP_HYSTERESIS_MAX_C ||

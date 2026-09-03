@@ -184,6 +184,7 @@ private:
     };
     TimeCtx _ctx_pt_up, _ctx_pt_dn, _ctx_dt_up, _ctx_dt_dn;
     bool  _fan_on;
+    uint32_t _fan_on_elapsed_seconds;
     bool  _heater_on;
     bool  _standby_mode_active;
     uint32_t _heater_enable_after_ms;

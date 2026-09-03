@@ -617,7 +617,7 @@ DryerApp::DryerApp()
       _cur_temp(25.0f), _humidity(65.0f), _set_temp(64.0f),
       _pre_temp(DRYER_CFG_DEFAULT_PREHEAT_TEMP_C), _pre_time_min(DRYER_CFG_DEFAULT_PREHEAT_TIME_MIN), _pre_time_remain(0), _dry_time_min(DRYER_CFG_DEFAULT_DRY_TIME_MIN),
       _btn_repeat_cnt(0),
-      _fan_on(false), _heater_on(false), _standby_mode_active(false),
+      _fan_on(false), _fan_on_elapsed_seconds(0), _heater_on(false), _standby_mode_active(false),
       _heater_enable_after_ms(0), _fan_disable_after_ms(0),
       _fan_icon_state_valid(false), _fan_icon_last_on(false),
       _footer_icon_state_valid(false), _heater_icon_last_on(false),
@@ -1118,7 +1118,7 @@ void DryerApp::buildMainScreen(void)
     kor(icons,"히터",0,75,118,24,C_WHITE,C_PANEL,1,true);kor(icons,"송풍기",118,75,118,24,C_WHITE,C_PANEL,1,true);kor(icons,"댐퍼",236,75,118,24,C_WHITE,C_PANEL,1,true);kor(icons,"도어",354,75,118,24,C_WHITE,C_PANEL,1,true);
     _dot_heater=lv_canvas_create(icons);lv_canvas_set_buffer(_dot_heater,s_icon_heater_buf,ICON_SZ,ICON_SZ,LV_IMG_CF_TRUE_COLOR);lv_obj_set_pos(_dot_heater,27,14);
     _fan_ring=lv_obj_create(icons);lv_obj_set_pos(_fan_ring,151,14);lv_obj_set_size(_fan_ring,FAN_ICON_SZ,FAN_ICON_SZ);lv_obj_set_style_radius(_fan_ring,LV_RADIUS_CIRCLE,0);lv_obj_set_style_bg_opa(_fan_ring,LV_OPA_TRANSP,0);lv_obj_set_style_border_width(_fan_ring,3,0);lv_obj_set_style_border_color(_fan_ring,C_GRAY,0);lv_obj_set_style_pad_all(_fan_ring,0,0);lv_obj_clear_flag(_fan_ring,LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_CLICKABLE);
-    _dot_fan=lv_canvas_create(icons);lv_canvas_set_buffer(_dot_fan,s_icon_fan_buf,FAN_ICON_SZ,FAN_ICON_SZ,LV_IMG_CF_TRUE_COLOR_CHROMA_KEYED);lv_obj_set_pos(_dot_fan,151,14);lv_img_set_pivot(_dot_fan,FAN_ICON_SZ/2,FAN_ICON_SZ/2);lv_img_set_antialias(_dot_fan,true);_lbl_fan_rate=icon_text("0.0 m/s",118,99,C_CYAN);
+    _dot_fan=lv_canvas_create(icons);lv_canvas_set_buffer(_dot_fan,s_icon_fan_buf,FAN_ICON_SZ,FAN_ICON_SZ,LV_IMG_CF_TRUE_COLOR_CHROMA_KEYED);lv_obj_set_pos(_dot_fan,151,14);lv_img_set_pivot(_dot_fan,FAN_ICON_SZ/2,FAN_ICON_SZ/2);lv_img_set_antialias(_dot_fan,true);_lbl_fan_rate=icon_text("0.0m/s(0)",118,99,C_CYAN);
     _dot_damper=lv_canvas_create(icons);lv_canvas_set_buffer(_dot_damper,s_icon_damper_buf,ICON_SZ,ICON_SZ,LV_IMG_CF_TRUE_COLOR);lv_obj_set_pos(_dot_damper,263,14);_lbl_damper=lv_canvas_create(icons);lv_canvas_set_buffer(_lbl_damper,s_damper_status_buf,118,24,LV_IMG_CF_TRUE_COLOR);lv_obj_set_pos(_lbl_damper,236,96);
     _door_icon=lv_canvas_create(icons);lv_canvas_set_buffer(_door_icon,s_door_icon_buf,DOOR_ICON_SZ,DOOR_ICON_SZ,LV_IMG_CF_TRUE_COLOR);lv_obj_set_pos(_door_icon,381,14);
     _btn_damper=lv_btn_create(icons);lv_obj_set_pos(_btn_damper,236,0);lv_obj_set_size(_btn_damper,118,120);lv_obj_set_style_radius(_btn_damper,0,0);lv_obj_set_style_bg_opa(_btn_damper,LV_OPA_TRANSP,LV_STATE_DEFAULT);lv_obj_set_style_bg_color(_btn_damper,C_WHITE,LV_STATE_PRESSED);lv_obj_set_style_bg_opa(_btn_damper,LV_OPA_10,LV_STATE_PRESSED);lv_obj_set_style_border_width(_btn_damper,1,0);lv_obj_set_style_border_color(_btn_damper,C_PANEL,0);lv_obj_set_style_shadow_width(_btn_damper,0,0);lv_obj_add_event_cb(_btn_damper,cbBtnDamper,LV_EVENT_CLICKED,this);
@@ -1286,6 +1286,7 @@ void DryerApp::buildCoolingSettingsScreen(void)
     lv_obj_t*minus=makeBtn(_scr_cooling,730,50,120,85,"-",lv_color_hex(0x0067A3),cbCoolingValueDn,this);lv_obj_set_style_text_font(lv_obj_get_child(minus,0),&lv_font_montserrat_32,0);
     lv_obj_t*plus=makeBtn(_scr_cooling,870,50,120,85,"+",lv_color_hex(0x0067A3),cbCoolingValueUp,this);lv_obj_set_style_text_font(lv_obj_get_child(plus,0),&lv_font_montserrat_32,0);
     lv_obj_add_event_cb(minus,cbCoolingValueDn,LV_EVENT_LONG_PRESSED_REPEAT,this);lv_obj_add_event_cb(plus,cbCoolingValueUp,LV_EVENT_LONG_PRESSED_REPEAT,this);
+    lv_obj_add_event_cb(minus,cbCoolingValueDn,LV_EVENT_RELEASED,this);lv_obj_add_event_cb(plus,cbCoolingValueUp,LV_EVENT_RELEASED,this);
     korBtn(4,730,265,260,75,"기본값 초기화",lv_color_hex(0x8A5A00),cbCoolingReset,2);korBtn(5,730,360,260,75,"저장 후 종료",lv_color_hex(0x287D3C),cbCoolingSaveExit,2);korBtn(6,730,455,260,75,"나가기",lv_color_hex(0xB3261E),cbCoolingExit,2);
     lv_obj_set_x(_dryer_setting_values[19],360);lv_obj_set_width(_dryer_setting_values[19],290);lv_label_set_recolor(_dryer_setting_values[19],true);lv_obj_add_event_cb(_dryer_setting_rows[19],cbCoolingIpNextOctet,LV_EVENT_CLICKED,this);
 }
@@ -1313,7 +1314,7 @@ void DryerApp::adjustDryerSetting(int direction)
     if(_dryer_setting_sel==19){if(_dryer_ip_octet_sel<4){int32_t*ip=&_dryer_settings_edit.http_server_ip1;int32_t&value=ip[_dryer_ip_octet_sel];value+=direction;if(value<0)value=0;if(value>255)value=255;}else{int32_t&value=_dryer_settings_edit.http_server_port;value+=direction;if(value<1)value=1;if(value>65535)value=65535;}refreshCoolingSettings();return;}
     int32_t*fields[19]={&_dryer_settings_edit.dry_temp_c,&_dryer_settings_edit.dry_time_min,&_dryer_settings_edit.preheat_temp_c,&_dryer_settings_edit.preheat_time_min,&_dryer_settings_edit.temp_hysteresis_c,&_dryer_settings_edit.cooling_temp_c,&_dryer_settings_edit.cooling_time_min,&_dryer_settings_edit.damper_mode,&_dryer_settings_edit.damper_open_humidity_pct,&_dryer_settings_edit.damper_hysteresis_pct,&_dryer_settings_edit.high_warning_temp_c,&_dryer_settings_edit.low_warning_reach_time_min,&_dryer_settings_edit.min_temp_rise_c_per_min,&_dryer_settings_edit.fan_adc_at_10ms,&_dryer_settings_edit.mqtt_publish_interval_min,&_dryer_settings_edit.fan_min_speed_ms,&_dryer_settings_edit.standby_enabled,&_dryer_settings_edit.standby_time_min,&_dryer_settings_edit.standby_temp_c};
     static const int minimum[19]={10,0,0,0,1,10,0,0,0,1,10,1,1,1,1,0,0,0,0};
-    static const int maximum[19]={90,1440,90,120,20,90,1440,2,100,50,120,1440,60,4095,1440,15,2,1440,90};
+    static const int maximum[19]={90,1440,90,120,20,90,1440,2,100,50,120,1440,60,4096,1440,15,2,1440,90};
     int32_t &value=*fields[_dryer_setting_sel];value+=direction;
     if(value<minimum[_dryer_setting_sel])value=minimum[_dryer_setting_sel];
     if(value>maximum[_dryer_setting_sel])value=maximum[_dryer_setting_sel];
@@ -1814,7 +1815,11 @@ void DryerApp::refreshCards(void)
     }
     if (_lbl_door) lv_label_set_text(_lbl_door, _door_open ? "OPEN" : "CLOSED");
     if (_lbl_fan_rate) {
-        snprintf(buf, sizeof(buf), "%.1f m/s", _blower_speed_ms);
+        const FanVelocitySensorValue &fan = g_dryer_sensor_values.fan_velocity;
+        if (fan.valid)
+            snprintf(buf, sizeof(buf), "%.1fm/s(%d)", _blower_speed_ms, fan.raw);
+        else
+            snprintf(buf, sizeof(buf), "--.-m/s(----)");
         setLabelTextIfChanged(_lbl_fan_rate, buf);
     }
     if (_lbl_dryness) {
@@ -2115,6 +2120,12 @@ void DryerApp::cbFanSpinTimer(lv_timer_t *t)
 void DryerApp::cbTimer(lv_timer_t *t)
 {
     DryerApp *self = (DryerApp *)t->user_data;
+    if (s_relay.fanOn()) {
+        if (self->_fan_on_elapsed_seconds < FAN_MONITOR_START_DELAY_SECONDS)
+            ++self->_fan_on_elapsed_seconds;
+    } else {
+        self->_fan_on_elapsed_seconds = 0;
+    }
     static unsigned heartbeat = 0;
     if ((++heartbeat % 5U) == 0U) {
         printf("DY-EP4 heartbeat: UI running, MQTT=%s, FAN ADC=%d (constant=%d, %.2f m/s)\n",
@@ -2468,8 +2479,11 @@ void DryerApp::updateSensorValues(void)
         values.load_cell.valid = true;
     }
 
+    const bool fan_monitor_ready = _dry_state != DRY_FINISH &&
+        s_relay.fanOn() && _fan_on &&
+        _fan_on_elapsed_seconds >= FAN_MONITOR_START_DELAY_SECONDS;
     FanCurrentSensorValue fan_current{};
-    if (s_fan.read(fan_current) == ESP_OK) {
+    if (fan_monitor_ready && s_fan.read(fan_current) == ESP_OK) {
         values.fan_velocity.raw = fan_current.raw;
         values.fan_velocity.reference_adc = _dryer_settings.fan_adc_at_10ms;
         values.fan_velocity.velocity_ms =
@@ -2477,6 +2491,8 @@ void DryerApp::updateSensorValues(void)
             static_cast<float>(_dryer_settings.fan_adc_at_10ms);
         values.fan_velocity.valid = fan_current.valid;
     } else {
+        values.fan_velocity.raw = 0;
+        values.fan_velocity.reference_adc = _dryer_settings.fan_adc_at_10ms;
         values.fan_velocity.valid = false;
         values.fan_velocity.velocity_ms = 0.0F;
     }
@@ -2523,11 +2539,16 @@ void DryerApp::errorCheck(void)
     current.weight_sensor_error = _rs485_sensors != nullptr &&
         _rs485_sensors->loadCellFailureCount() >= SENSOR_COMM_FAILURE_LIMIT;
 
-    const bool fan_running = _fan_on;
-    current.fan_min_error = fan_running && values.fan_velocity.valid &&
+    /* A stopped/finishing fan normally decays through 1 m/s to 0 m/s.
+       Running-speed alarms apply only while the relay is actually on and
+       the dryer is in an operating state. */
+    const bool fan_monitor_ready = _dry_state != DRY_FINISH &&
+        s_relay.fanOn() && _fan_on &&
+        _fan_on_elapsed_seconds >= FAN_MONITOR_START_DELAY_SECONDS;
+    current.fan_min_error = fan_monitor_ready && values.fan_velocity.valid &&
         values.fan_velocity.velocity_ms <
             static_cast<float>(_dryer_settings.fan_min_speed_ms);
-    current.fan_max_error = fan_running && values.fan_velocity.valid &&
+    current.fan_max_error = fan_monitor_ready && values.fan_velocity.valid &&
         values.fan_velocity.velocity_ms > FAN_SPEED_MAX_MPS;
 
     const bool heating_state = _dry_state == DRY_PREHEAT || _dry_state == DRY_RUN;
@@ -3033,8 +3054,8 @@ void DryerApp::cbWeightExit(lv_event_t *e){DryerApp*s=static_cast<DryerApp*>(lv_
 
 void DryerApp::cbOpenCoolingSettings(lv_event_t *e){DryerApp*s=static_cast<DryerApp*>(lv_event_get_user_data(e));s->_dryer_settings_edit=s->_dryer_settings;s->_dryer_setting_sel=0;s->_dryer_ip_octet_sel=0;s->refreshCoolingSettings();lv_scr_load(s->_scr_cooling);s->_cur_scr=SCR_COOLING_SETTINGS;}
 void DryerApp::cbCoolingRowSelect(lv_event_t*e){DryerApp*s=static_cast<DryerApp*>(lv_event_get_user_data(e));lv_obj_t*row=lv_event_get_target(e);for(int i=0;i<DRYER_SETTING_COUNT;i++){if(s->_dryer_setting_rows[i]==row){if(i==19)return;s->_dryer_setting_sel=i;s->refreshCoolingSettings();Buzzer::instance().keyTone(25);break;}}}
-void DryerApp::cbCoolingValueDn(lv_event_t*e){static_cast<DryerApp*>(lv_event_get_user_data(e))->adjustDryerSetting(-1);if(lv_event_get_code(e)==LV_EVENT_LONG_PRESSED_REPEAT)Buzzer::instance().keyTone(25);}
-void DryerApp::cbCoolingValueUp(lv_event_t*e){static_cast<DryerApp*>(lv_event_get_user_data(e))->adjustDryerSetting(1);if(lv_event_get_code(e)==LV_EVENT_LONG_PRESSED_REPEAT)Buzzer::instance().keyTone(25);}
+void DryerApp::cbCoolingValueDn(lv_event_t*e){DryerApp*s=static_cast<DryerApp*>(lv_event_get_user_data(e));if(lv_event_get_code(e)==LV_EVENT_RELEASED){s->_btn_repeat_cnt=0;return;}int step=1;if(lv_event_get_code(e)==LV_EVENT_LONG_PRESSED_REPEAT){const int count=++s->_btn_repeat_cnt;step=count<15?5:count<40?25:100;Buzzer::instance().keyTone(25);}else{s->_btn_repeat_cnt=0;}s->adjustDryerSetting(-step);}
+void DryerApp::cbCoolingValueUp(lv_event_t*e){DryerApp*s=static_cast<DryerApp*>(lv_event_get_user_data(e));if(lv_event_get_code(e)==LV_EVENT_RELEASED){s->_btn_repeat_cnt=0;return;}int step=1;if(lv_event_get_code(e)==LV_EVENT_LONG_PRESSED_REPEAT){const int count=++s->_btn_repeat_cnt;step=count<15?5:count<40?25:100;Buzzer::instance().keyTone(25);}else{s->_btn_repeat_cnt=0;}s->adjustDryerSetting(step);}
 void DryerApp::cbCoolingIpNextOctet(lv_event_t*e){DryerApp*s=static_cast<DryerApp*>(lv_event_get_user_data(e));s->_dryer_setting_sel=19;s->_dryer_ip_octet_sel=(s->_dryer_ip_octet_sel+1)%5;s->refreshCoolingSettings();Buzzer::instance().keyTone(25);}
 void DryerApp::cbCoolingReset(lv_event_t *e){DryerApp*s=static_cast<DryerApp*>(lv_event_get_user_data(e));s->_dryer_settings_edit={DRYER_CFG_DEFAULT_DRY_TEMP_C,DRYER_CFG_DEFAULT_DRY_TIME_MIN,DRYER_CFG_DEFAULT_TEMP_HYSTERESIS_C,DRYER_CFG_DEFAULT_COOLING_TEMP_C,DRYER_CFG_DEFAULT_COOLING_TIME_MIN,DRYER_CFG_DEFAULT_DAMPER_MODE,DRYER_CFG_DEFAULT_DAMPER_OPEN_HUMIDITY_PCT,DRYER_CFG_DEFAULT_DAMPER_HYSTERESIS_PCT,DRYER_CFG_DEFAULT_HIGH_WARNING_TEMP_C,DRYER_CFG_DEFAULT_LOW_REACH_TIME_MIN,DRYER_CFG_DEFAULT_MIN_TEMP_RISE_C_PER_MIN,DRYER_CFG_DEFAULT_FAN_ADC_AT_10MS,DRYER_CFG_DEFAULT_MQTT_PUBLISH_INTERVAL_MIN,IMAGE_UPLOAD_DEFAULT_IP1,IMAGE_UPLOAD_DEFAULT_IP2,IMAGE_UPLOAD_DEFAULT_IP3,IMAGE_UPLOAD_DEFAULT_IP4,IMAGE_UPLOAD_DEFAULT_PORT,DRYER_CFG_DEFAULT_PREHEAT_TEMP_C,DRYER_CFG_DEFAULT_PREHEAT_TIME_MIN,DRYER_CFG_DEFAULT_STANDBY_ENABLED,DRYER_CFG_DEFAULT_STANDBY_TIME_MIN,DRYER_CFG_DEFAULT_STANDBY_TEMP_C,DRYER_CFG_DEFAULT_FAN_MIN_SPEED_MS};s->refreshCoolingSettings();}
 void DryerApp::cbCoolingSaveExit(lv_event_t *e){DryerApp*s=static_cast<DryerApp*>(lv_event_get_user_data(e));DryerNvsCoolingSettings verify{};if(!s_nvs.saveCoolingSettings(s->_dryer_settings_edit)||!s_nvs.loadCoolingSettings(&verify)||memcmp(&verify,&s->_dryer_settings_edit,sizeof(verify))!=0){printf("Dryer settings NVS verification failed\n");return;}s->_dryer_settings=verify;s->_pre_temp=verify.preheat_temp_c;s->_pre_time_min=verify.preheat_time_min;s->_mqtt_publish_elapsed_s=0;s->_damper_mode=static_cast<DamperMode>(verify.damper_mode);lv_scr_load(s->_scr_main);s->_cur_scr=SCR_MAIN;}
